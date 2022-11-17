@@ -1,5 +1,5 @@
 class Game():
-    def __init__(self, map, nodes_group, pellets_group):
+    def __init__(self, map):
         self.grid = []
         self.paused = False
         x, y = self.create_grid(map)
@@ -32,8 +32,8 @@ class Pacman():
         self.lives = 3
 
         self.position = row, col
-        self.row_pixel = row*16+44
-        self.col_pixel = col*16+5
+        self.row_pixel = self.position[0]*16
+        self.col_pixel = self.position[1]*16
         
         self.directions = {"UP": -1, "DOWN": 1, "LEFT": -2, "RIGHT": 2}
         self.direction = self.directions["LEFT"]
@@ -49,7 +49,6 @@ class Pacman():
                 if (neighbours[neighbour] is not None):
                     available_directions.append(self.directions[neighbour])
 
-            print(list(set(available_directions)))
         return list(set(available_directions))
 
     def next_direction(self, arrow_key, nodes_group):
@@ -111,6 +110,10 @@ class Nodes_group():
 
                     previous_node = self.nodes[(row,col)]
 
+                    if col == 0:
+                        self.nodes[(row, col)].neighbours["LEFT"] = self.nodes[(row, 27)]
+                        self.nodes[(row, 27)].neighbours["RIGHT"] = self.nodes[(row, col)]
+
     def connect_nodes_col_wise(self, x, y, grid):
         for col in range(y):
             previous_node = None
@@ -147,6 +150,8 @@ class Pellets_group():
     def __init__(self):
         self.pellets = {}
         self.power_pellets = {}
+        self.pellets_coord = []
+        self.power_pellets_coord = []
 
     def create_pellets(self, grid, x, y):
         for row in range(x):
