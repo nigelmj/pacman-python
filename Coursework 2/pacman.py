@@ -8,8 +8,8 @@ class Game():
         self.pellets_group = Pellets_group()
 
         self.nodes_group.create_nodes(self.grid, x, y)
-        self.nodes_group.connect_nodes_row_wise(x, y)
-        self.nodes_group.connect_nodes_col_wise(x, y)
+        self.nodes_group.connect_nodes_row_wise(x, y, self.grid)
+        self.nodes_group.connect_nodes_col_wise(x, y, self.grid)
 
         self.pellets_group.create_pellets(self.grid, x, y)
 
@@ -45,11 +45,12 @@ class Pacman():
         if self.position in nodes_group.nodes:
             neighbours = nodes_group.nodes[self.position].neighbours
 
-            for direction in neighbours:
-                if (neighbours[direction] is not None) and (direction not in available_directions):
-                    available_directions.append(self.directions[direction])
+            for neighbour in neighbours:
+                if (neighbours[neighbour] is not None):
+                    available_directions.append(self.directions[neighbour])
 
-        return available_directions
+            print(list(set(available_directions)))
+        return list(set(available_directions))
 
     def next_direction(self, arrow_key, nodes_group):
         arrow_key = arrow_key.upper()
@@ -62,10 +63,15 @@ class Pacman():
         elif self.position in nodes_group.nodes:
             self.stopped = True
 
-    def get_position(self, row_pixel, col_pixel):
+    def get_position(self, row_pixel, col_pixel, direction):
         
-        row = (row_pixel+8)//16 
-        col = (col_pixel+8)//16 
+        row = (row_pixel)//16 
+        col = (col_pixel)//16 
+
+        if direction == -1:
+            row = (row_pixel+12)//16
+        elif direction == -2:
+            col = (col_pixel+12)//16
 
         return row, col
 
@@ -87,13 +93,17 @@ class Nodes_group():
                     node = Node(row, col)
                     self.nodes[(row,col)] = node
 
-    def connect_nodes_row_wise(self, x, y):
+    def connect_nodes_row_wise(self, x, y, grid):
         for row in range(x):
             previous_node = None
 
             for col in range(y):
-                if (row, col) in self.nodes:
 
+                if grid[row][col] == 'X':
+                    previous_node = None
+                    
+                elif (row, col) in self.nodes:
+ 
                     if previous_node is not None:
                         current_node = self.nodes[(row,col)]
                         current_node.neighbours["LEFT"] = previous_node
@@ -101,12 +111,16 @@ class Nodes_group():
 
                     previous_node = self.nodes[(row,col)]
 
-    def connect_nodes_col_wise(self, x, y):
+    def connect_nodes_col_wise(self, x, y, grid):
         for col in range(y):
             previous_node = None
 
             for row in range(x):
-                if (row, col) in self.nodes:
+
+                if grid[row][col] == 'X':
+                    previous_node = None
+
+                elif (row, col) in self.nodes:
 
                     if previous_node is not None:
                         current_node = self.nodes[(row,col)]
