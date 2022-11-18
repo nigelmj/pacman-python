@@ -74,6 +74,44 @@ class Pacman():
 
         return row, col
 
+class Ghost():
+    def __init__(self, target, row, col):
+        self.target = target
+        self.behaviour = self.scatter(self.target)
+
+        self.position = row, col
+        self.row_pixel = self.position[0]*16
+        self.col_pixel = self.position[1]*16
+
+        self.directions = {"UP": -1, "DOWN": 1, "LEFT": -2, "RIGHT": 2}
+        self.direction = self.directions["LEFT"]
+
+    def scatter(self, target):
+        self.time = 7
+        pass
+
+    def calculate_available_directions(self, direction, nodes_group):
+        available_directions = []
+
+        if self.position in nodes_group.nodes:
+            neighbours = nodes_group.nodes[self.position].neighbours
+
+            for neighbour in neighbours:
+                if (neighbours[neighbour] is not None) and (self.directions[neighbour] != direction*-1):
+                    available_directions.append(self.directions[neighbour])
+
+        else: available_directions.append(direction)
+
+        return list(set(available_directions))
+
+    def next_direction(self, nodes_group):
+
+        available_directions = self.calculate_available_directions(self.direction, nodes_group)
+
+        if self.directions[arrow_key] in available_directions:
+            self.direction = self.directions[arrow_key]
+
+
 class Node():
     def __init__(self, x, y):
         self.position = (x, y)
