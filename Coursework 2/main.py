@@ -10,12 +10,18 @@ class Display():
         self.width = str(width)
         self.height = str(height)
         self.root.geometry(self.width+"x"+self.height)
-        # self.root.resizable(False, False)
+        self.root.resizable(False, False)
 
         self.game = game
 
         self.pacman = Pacman(23, 13)
-        self.ghost = Ghost(self.pacman.position, 11, 13)
+
+        self.blinky = Ghost("Blinky", (0, 25), 1, 23)
+        self.pinky = Ghost("Pinky", (0, 3), 1, 7)
+        self.inky = Ghost("Inky", (30, 27), 29, 23)
+        self.clyde = Ghost("Clyde", (30, 0), 29, 7)
+
+        self.ghost_group = [self.blinky, self.pinky, self.inky, self.clyde]
 
         self.nodes_group = self.game.nodes_group
         self.pellets_group = self.game.pellets_group
@@ -61,15 +67,30 @@ class Display():
                     self.pellets_group.power_pellets_coord.append((indcol*16+8, indrow*16+8))
 
         row_pac, col_pac = self.pacman.position
-        row_gho, col_gho = self.ghost.position
+        row_bli, col_bli = self.blinky.position
+        row_pin, col_pin = self.pinky.position
+        row_ink, col_ink = self.inky.position
+        row_cly, col_cly = self.clyde.position
 
         self.pacman.circle = Canvas(self.root, bg="black", highlightthickness=0)
         self.pacman.circle.place(x=col_pac*16, y=row_pac*16, height=16, width=16)
         oval = self.pacman.circle.create_oval(0, 0, 15, 15, fill="yellow")
         
-        self.ghost.circle = Canvas(self.root, bg="black", highlightthickness=0)
-        self.ghost.circle.place(x=col_gho*16, y=row_gho*16, height=16, width=16)
-        oval = self.ghost.circle.create_oval(0, 0, 15, 15, fill="red")
+        self.blinky.circle = Canvas(self.root, bg="black", highlightthickness=0)
+        self.blinky.circle.place(x=col_bli*16, y=row_bli*16, height=16, width=16)
+        oval = self.blinky.circle.create_oval(0, 0, 15, 15, fill="red")
+
+        self.pinky.circle = Canvas(self.root, bg="black", highlightthickness=0)
+        self.pinky.circle.place(x=col_pin*16, y=row_pin*16, height=16, width=16)
+        oval = self.pinky.circle.create_oval(0, 0, 15, 15, fill="pink")
+
+        self.inky.circle = Canvas(self.root, bg="black", highlightthickness=0)
+        self.inky.circle.place(x=col_ink*16, y=row_ink*16, height=16, width=16)
+        oval = self.inky.circle.create_oval(0, 0, 15, 15, fill="lightblue")
+
+        self.clyde.circle = Canvas(self.root, bg="black", highlightthickness=0)
+        self.clyde.circle.place(x=col_cly*16, y=row_cly*16, height=16, width=16)
+        oval = self.clyde.circle.create_oval(0, 0, 15, 15, fill="orange")
 
         self.score_label = Label(self.root, text="Score: ", font=("Menlo", 20))
         self.score_label.place(x=10, y=31*16, width=80)
@@ -80,7 +101,7 @@ class Display():
         
         self.update_pellets(self.t)
         self.update_pacman(self.pacman.direction)
-        self.update_ghost()
+        self.update_ghosts()
 
         if not self.game.paused:
             self.root.after(75, self.update_screen)
@@ -137,38 +158,43 @@ class Display():
             self.pacman.position = self.pacman.get_position(row_pixel, col_pixel, self.pacman.direction)
             self.update_score()
 
-    def update_ghost(self):
+    def update_ghosts(self):
 
-        if self.ghost.position in self.nodes_group.nodes:
-            if (self.ghost.col_pixel+8, self.ghost.row_pixel+8) in self.nodes_group.nodes_coord:
-                self.ghost.next_direction(self.nodes_group, self.ghost.target)
+        for ghost in self.ghost_group:
+            if ghost.position in self.nodes_group.nodes:
+                if (ghost.col_pixel+8, ghost.row_pixel+8) in self.nodes_group.nodes_coord:
+                    ghost.next_direction(self.nodes_group, ghost.target)
 
-        row_pixel, col_pixel = self.ghost.row_pixel, self.ghost.col_pixel
-        direction = self.ghost.direction
+            row_pixel, col_pixel = ghost.row_pixel, ghost.col_pixel
+            direction = ghost.direction
 
-        if direction == 1: 
-            row_pixel += 4
+            if direction == 1: 
+                row_pixel += 4
 
-        elif direction == -1:
-            row_pixel -= 4
+            elif direction == -1:
+                row_pixel -= 4
 
-        elif direction == 2:
-            col_pixel += 4
+            elif direction == 2:
+                col_pixel += 4
 
-            if col_pixel > 28*16:
-                col_pixel = -16
+                if col_pixel > 28*16:
+                    col_pixel = -16
 
-        elif direction == -2:
-            col_pixel -= 4
+            elif direction == -2:
+                col_pixel -= 4
 
-            if col_pixel < -16:
-                col_pixel = 28*16
+                if col_pixel < -16:
+                    col_pixel = 28*16
 
-        self.ghost.circle.place(x=col_pixel, y=row_pixel)
-        self.ghost.row_pixel, self.ghost.col_pixel = row_pixel, col_pixel
-        self.ghost.position = self.ghost.get_position(row_pixel, col_pixel, self.ghost.direction)
-        self.ghost.target = self.pacman.position
-        
+            ghost.circle.place(x=col_pixel, y=row_pixel)
+            ghost.row_pixel, ghost.col_pixel = row_pixel, col_pixel
+            ghost.position = ghost.get_position(row_pixel, col_pixel, ghost.direction)
+            ghost.next_target(self.pacman.position, self.pacman.direction, self.blinky.position)
+    
+    def update_ghost_state(self):
+        for ghost in self.ghost_group:
+            pass
+    
     def update_score(self):
         pacman_coord = self.pacman.col_pixel+8, self.pacman.row_pixel+8
 

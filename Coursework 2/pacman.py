@@ -70,14 +70,16 @@ class Pacman():
         col = (col_pixel)//16 
 
         if direction == -1:
-            row = (row_pixel+14)//16
+            row = (row_pixel+15)//16
         elif direction == -2:
-            col = (col_pixel+14)//16
+            col = (col_pixel+15)//16
 
         return row, col
 
 class Ghost():
-    def __init__(self, target, row, col):
+    def __init__(self, name, target, row, col):
+        self.name = name
+
         self.target = target
         self.state = self.scatter(self.target)
 
@@ -89,6 +91,7 @@ class Ghost():
         self.direction = self.directions["LEFT"]
 
     def scatter(self, target):
+        self.target = target
         self.time = 7
         
     def chase(self, target):
@@ -108,8 +111,60 @@ class Ghost():
 
         return list(set(available_directions))
 
-    def calculate_target_distance(self, position, direction, target):
-        x1, y1 = position
+    def pinky_target(self, target, direction):
+        x, y = target
+        if direction == -1:
+            x -= 4
+            y -= 4
+        elif direction == -2:
+            y -= 4
+        elif direction == 1:
+            x += 4
+        elif direction == 2:
+            y += 4
+
+        return x, y
+
+    def inky_target(self, target, direction, blinky_position):
+        x1, y1 = target
+        x2, y2 = blinky_position
+
+        if direction == -1:
+            x1 -= 2
+            y1 -= 2
+        elif direction == -2:
+            y1 -= 2
+        elif direction == 1:
+            x1 += 2
+        elif direction == 2:
+            y1 += 2
+
+        x = 2*x1 - x2
+        y = 2*y1 - y2
+
+        return x, y
+
+    def clyde_target(self, target):
+        x1, y1 = self.position
+        x2, y2 = target
+        distance = sqrt((x1-x2)**2 + (y1-y2)**2)
+        if distance < 8:
+            return (30, 0)
+        else:
+            return target
+    
+    def next_target(self, pacman_position, pacman_direction, blinky_position):
+        if self.name == "Blinky":
+            self.target = pacman_position
+        elif self.name == "Pinky":
+            self.target = self.pinky_target(pacman_position, pacman_direction)
+        elif self.name == "Inky":
+            self.target = self.inky_target(pacman_position, pacman_direction, blinky_position)
+        elif self.name == "Clyde":
+            self.target = self.clyde_target(pacman_position)
+
+    def calculate_target_distance(self, direction, target):
+        x1, y1 = self.position
         if direction == -1:
             x1 -= 1
         elif direction == -2:
@@ -127,11 +182,12 @@ class Ghost():
 
         available_directions = self.calculate_available_directions(self.direction, nodes_group)
 
-        distance = self.calculate_target_distance(self.position, available_directions[0], target)
+        distance = self.calculate_target_distance(available_directions[0], target)
         self.direction = available_directions[0]
         for direction in available_directions:
-            temp_distance = self.calculate_target_distance(self.position, direction, target)
+            temp_distance = self.calculate_target_distance(direction, target)
             if temp_distance < distance:
+                distance = temp_distance
                 self.direction = direction
 
     def get_position(self, row_pixel, col_pixel, direction):
