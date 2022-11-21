@@ -1,3 +1,4 @@
+import random
 from math import sqrt
 
 class Game():
@@ -81,7 +82,6 @@ class Ghost():
         self.name = name
 
         self.target = target
-        self.state = self.scatter(self.target)
 
         self.position = row, col
         self.row_pixel = self.position[0]*16
@@ -90,14 +90,7 @@ class Ghost():
         self.directions = {"UP": -1, "LEFT": -2, "DOWN": 1, "RIGHT": 2}
         self.direction = self.directions["LEFT"]
 
-    def scatter(self, target):
-        self.target = target
-        self.time = 7
-        
-    def chase(self, target):
-        self.time = 20
-
-    def calculate_available_directions(self, direction, nodes_group):
+    def calculate_available_directions_ghost(self, direction, nodes_group):
         available_directions = []
 
         if self.position in nodes_group.nodes:
@@ -152,16 +145,6 @@ class Ghost():
             return (30, 0)
         else:
             return target
-    
-    def next_target(self, pacman_position, pacman_direction, blinky_position):
-        if self.name == "Blinky":
-            self.target = pacman_position
-        elif self.name == "Pinky":
-            self.target = self.pinky_target(pacman_position, pacman_direction)
-        elif self.name == "Inky":
-            self.target = self.inky_target(pacman_position, pacman_direction, blinky_position)
-        elif self.name == "Clyde":
-            self.target = self.clyde_target(pacman_position)
 
     def calculate_target_distance(self, direction, target):
         x1, y1 = self.position
@@ -178,9 +161,9 @@ class Ghost():
 
         return sqrt((x1-x2)**2 + (y1-y2)**2)
 
-    def next_direction(self, nodes_group, target):
+    def next_direction_ghost(self, nodes_group, target):
 
-        available_directions = self.calculate_available_directions(self.direction, nodes_group)
+        available_directions = self.calculate_available_directions_ghost(self.direction, nodes_group)
 
         distance = self.calculate_target_distance(available_directions[0], target)
         self.direction = available_directions[0]
@@ -196,11 +179,102 @@ class Ghost():
         col = (col_pixel)//16 
 
         if direction == -1:
-            row = (row_pixel+14)//16
+            row = (row_pixel+15)//16
         elif direction == -2:
-            col = (col_pixel+14)//16
+            col = (col_pixel+15)//16
 
         return row, col
+
+class Ghosts_group():
+    def __init__(self, state):
+
+        self.ghosts = [
+            Ghost("Blinky", (0, 25), 1, 23), 
+            Ghost("Pinky", (0, 3), 1, 7),
+            Ghost("Inky", (30, 27), 29, 23),
+            Ghost("Clyde", (30, 0), 29, 7)
+        ]
+
+        self.state = state
+        self.time = {
+            "SCATTER" : 10,
+            "CHASE" : 20, 
+            "FRIGHTENED" : 10
+        }
+
+        self.colour = {
+            "Blinky" : "red",
+            "Pinky" : "pink",
+            "Inky" : "lightblue",
+            "Clyde" : "orange",
+        }
+
+        self.canvas = {}
+
+    def scatter(self, ghosts, change):
+        for ghost in ghosts:
+            ghost.circle.itemconfig(ghost.oval, fill=self.colour[ghost.name])
+            if ghost.name == "Blinky":
+                ghost.target = (0, 25)
+            elif ghost.name == "Pinky":
+                ghost.target = (0, 3)
+            elif ghost.name == "Inky":
+                ghost.target = (30, 27)
+            elif ghost.name == "Clyde":
+                ghost.target = (30, 0)
+
+            if change == True:
+                ghost.direction *= -1
+
+    def chase(self, ghosts, pacman_position, pacman_direction, blinky_position, change):
+
+        for ghost in ghosts:
+            ghost.circle.itemconfig(ghost.oval, fill=self.colour[ghost.name])
+            if ghost.name == "Blinky":
+                ghost.target = pacman_position
+            elif ghost.name == "Pinky":
+                ghost.target = ghost.pinky_target(pacman_position, pacman_direction)
+            elif ghost.name == "Inky":
+                ghost.target = ghost.inky_target(pacman_position, pacman_direction, blinky_position)
+            elif ghost.name == "Clyde":
+                ghost.target = ghost.clyde_target(pacman_position)
+
+            if change == True:
+                ghost.direction *= -1
+    
+    def frightened(self, ghosts, nodes_group, change):
+        for ghost in ghosts:
+            ghost.circle.itemconfig(ghost.oval, fill="blue")
+            available_directions = ghost.calculate_available_directions_ghost(ghost.direction, nodes_group)
+
+            if change == True:
+                ghost.direction *= -1
+
+            elif (ghost.col_pixel+8, ghost.row_pixel+8) in nodes_group.nodes_coord:
+
+                ghost.direction = random.choice(available_directions)
+                x, y = ghost.position
+                
+                if ghost.direction == -1:
+                    x -= 1
+                elif ghost.direction == -2:
+                    y -= 1
+                elif ghost.direction == 1:
+                    x += 1
+                elif ghost.direction == 2:
+                    y += 1
+                
+                ghost.target = x, y
+
+    def next_target(self, state, ghosts, pacman_position, pacman_direction, blinky_position, nodes_group, change):
+        if state == "SCATTER":
+            self.scatter(ghosts, change)
+
+        elif state == "CHASE": 
+            self.chase(ghosts, pacman_position, pacman_direction, blinky_position, change)
+
+        elif state == "FRIGHTENED":
+            self.frightened(ghosts, nodes_group, change)
 
 class Node():
     def __init__(self, x, y):
