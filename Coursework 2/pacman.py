@@ -7,8 +7,10 @@ class Game():
         self.paused = False
         x, y = self.create_grid(map)
 
+        self.score = 0
         self.nodes_group = Nodes_group()
         self.pellets_group = Pellets_group()
+        self.lvl = 1
 
         self.nodes_group.create_nodes(self.grid, x, y)
         self.nodes_group.connect_nodes_row_wise(x, y, self.grid)
@@ -30,7 +32,6 @@ class Pacman():
     def __init__(self, row, col):
 
         self.stopped = False
-        self.score = 0
         self.alive = True
         self.lives = 3
 
@@ -38,14 +39,14 @@ class Pacman():
         self.row_pixel = self.position[0]*16
         self.col_pixel = self.position[1]*16
         
-        self.directions = {"UP": -1, "LEFT": -2, "DOWN": 1, "RIGHT": 2}
-        self.direction = self.directions["LEFT"]
+        self.directions = {"Up": -1, "Left": -2, "Down": 1, "Right": 2}
+        self.direction = self.directions["Left"]
 
     def calculate_available_directions(self, direction, nodes_group):
         available_directions = []
         available_directions.append(direction * -1)
 
-        if self.position in nodes_group.nodes:
+        if (self.col_pixel+8, self.row_pixel+8) in nodes_group.nodes_coord:
             neighbours = nodes_group.nodes[self.position].neighbours
 
             for neighbour in neighbours:
@@ -54,25 +55,25 @@ class Pacman():
 
         return list(set(available_directions))
 
-    def next_direction(self, arrow_key, nodes_group):
-        arrow_key = arrow_key.upper()
+    def next_direction(self, direction, nodes_group):
+
         available_directions = self.calculate_available_directions(self.direction, nodes_group)
+        if direction in available_directions:
 
-        if self.directions[arrow_key] in available_directions:
-            self.direction = self.directions[arrow_key]
             self.stopped = False
+            self.direction = direction
 
-        elif self.position in nodes_group.nodes:
+        elif (self.col_pixel+8, self.row_pixel+8) in nodes_group.nodes_coord:
             self.stopped = True
 
-    def get_position(self, row_pixel, col_pixel, direction):
+    def get_position(self, row_pixel, col_pixel):
         
         row = (row_pixel)//16 
         col = (col_pixel)//16 
 
-        if direction == -1:
+        if self.direction == -1:
             row = (row_pixel+15)//16
-        elif direction == -2:
+        elif self.direction == -2:
             col = (col_pixel+15)//16
 
         return row, col
@@ -87,8 +88,8 @@ class Ghost():
         self.row_pixel = self.position[0]*16
         self.col_pixel = self.position[1]*16
 
-        self.directions = {"UP": -1, "LEFT": -2, "DOWN": 1, "RIGHT": 2}
-        self.direction = self.directions["LEFT"]
+        self.directions = {"Up": -1, "Left": -2, "Down": 1, "Right": 2}
+        self.direction = self.directions["Left"]
 
     def calculate_available_directions_ghost(self, direction, nodes_group):
         available_directions = []
@@ -266,20 +267,10 @@ class Ghosts_group():
                 
                 ghost.target = x, y
 
-    def next_target(self, state, ghosts, pacman_position, pacman_direction, blinky_position, nodes_group, change):
-        if state == "SCATTER":
-            self.scatter(ghosts, change)
-
-        elif state == "CHASE": 
-            self.chase(ghosts, pacman_position, pacman_direction, blinky_position, change)
-
-        elif state == "FRIGHTENED":
-            self.frightened(ghosts, nodes_group, change)
-
 class Node():
     def __init__(self, x, y):
         self.position = (x, y)
-        self.neighbours = {"UP": None, "LEFT": None, "DOWN": None, "RIGHT": None}
+        self.neighbours = {"Up": None, "Left": None, "Down": None, "Right": None}
 
 class Nodes_group():
     def __init__(self):
@@ -307,14 +298,14 @@ class Nodes_group():
  
                     if previous_node is not None:
                         current_node = self.nodes[(row,col)]
-                        current_node.neighbours["LEFT"] = previous_node
-                        previous_node.neighbours["RIGHT"] = current_node
+                        current_node.neighbours["Left"] = previous_node
+                        previous_node.neighbours["Right"] = current_node
 
                     previous_node = self.nodes[(row,col)]
 
                     if col == 0:
-                        self.nodes[(row, col)].neighbours["LEFT"] = self.nodes[(row, 27)]
-                        self.nodes[(row, 27)].neighbours["RIGHT"] = self.nodes[(row, col)]
+                        self.nodes[(row, col)].neighbours["Left"] = self.nodes[(row, 27)]
+                        self.nodes[(row, 27)].neighbours["Right"] = self.nodes[(row, col)]
 
     def connect_nodes_col_wise(self, x, y, grid):
         for col in range(y):
@@ -329,8 +320,8 @@ class Nodes_group():
 
                     if previous_node is not None:
                         current_node = self.nodes[(row,col)]
-                        current_node.neighbours["UP"] = previous_node
-                        previous_node.neighbours["DOWN"] = current_node
+                        current_node.neighbours["Up"] = previous_node
+                        previous_node.neighbours["Down"] = current_node
 
                     previous_node = self.nodes[(row,col)]
 
@@ -360,9 +351,7 @@ class Pellets_group():
             for col in range(y):
 
                 if grid[row][col] in "+.":
-                    pellet = Pellet(row, col)
-                    self.pellets[(row,col)] = pellet
+                    self.pellets[(row,col)] = Pellet(row, col)
 
                 elif grid[row][col] in "pP":
-                    powerpellet = PowerPellet(row, col)
-                    self.power_pellets[(row,col)] = powerpellet
+                    self.power_pellets[(row,col)] = PowerPellet(row, col)

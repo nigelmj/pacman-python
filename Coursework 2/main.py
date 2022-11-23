@@ -22,6 +22,9 @@ class Display():
         self.inky = self.ghosts_group.ghosts[2]
         self.clyde = self.ghosts_group.ghosts[3]
 
+        self.pacman_speed = 4
+        self.ghost_speed = 4
+
         self.nodes_group = self.game.nodes_group
         self.pellets_group = self.game.pellets_group
         self.pellets_canvas = {}
@@ -34,22 +37,75 @@ class Display():
         self.canvas_bg.place(x=-1, y=-1)
         self.canvas_bg.create_image(0, 0, image=bg, anchor="nw")
 
+        self.game.paused = True
         self.pacman_keys = ["Up", "Down", "Left", "Right"]
         self.root.bind("<Key>", self.inputs)
         self.t = 1
         self.time = 0
         self.change = False
 
+        self.menu()
+
+        self.root.mainloop()
+
+    def menu(self):
+        self.menu_frame = LabelFrame(self.root, bd=0)
+        self.menu_frame.place(x=130, y=130, width=190, height=250)
+
+        continue_button = Button(self.menu_frame, text="Continue", command=self.load_game, font=("Menlo", 16))
+        continue_button.place(x=20, y=20, height=40, width=150)
+        
+        new_button = Button(self.menu_frame, text="New Game", command=self.start_game, font=("Menlo", 16))
+        new_button.place(x=20, y=80, height=40, width=150)
+
+        high_score_button = Button(self.menu_frame, text="High Scores", command=self.menu_frame.destroy, font=("Menlo", 16))
+        high_score_button.place(x=20, y=140, height=40, width=150)
+
+        cheat_button = Button(self.menu_frame, text="Enter Code", command=self.menu_frame.destroy, font=("Menlo", 16))
+        cheat_button.place(x=20, y=200, height=40, width=150)
+
+    def load_game(self):
+        with open("GameSave.txt") as f:
+            data = f.read().split("\n")
+
+            self.game.lvl = int(data[0])
+            self.pacman.lives = int(data[1])
+            self.game.score = int(data[2])
+
+            temp_pellets = data[3].split(":")
+            temp_power_pellets = data[4].split(":")
+
+            self.pellets_group.pellets = {}
+            self.pellets_group.power_pellets = {}
+
+            for pellet in temp_pellets:
+                pellet = pellet[1:-1].split(',')
+
+                row = int(pellet[0])
+                col = int(pellet[1])
+                self.pellets_group.pellets[(row, col)] = Pellet(row, col)
+
+            for power_pellet in temp_power_pellets:
+                power_pellet = power_pellet[1:-1].split(',')
+
+                row = int(power_pellet[0])
+                col = int(power_pellet[1])
+                self.pellets_group.power_pellets[(row, col)] = PowerPellet(row, col)
+
+            self.start_game()
+
+    def start_game(self):
+
+        self.menu_frame.destroy()
+        self.game.paused = False
         self.display()
         self.counter()
         self.update_ghost_state("SCATTER")
         self.update_screen()
-        self.root.mainloop()
-
+        
     def counter(self):
         if self.game.paused != True:
             self.time += 1
-            print(self.time)
             self.root.after(1000, self.counter)
         
     def display(self):
@@ -79,7 +135,7 @@ class Display():
 
         self.pacman.circle = Canvas(self.root, bg="black", highlightthickness=0)
         self.pacman.circle.place(x=col_pac*16, y=row_pac*16, height=16, width=16)
-        oval = self.pacman.circle.create_oval(0, 0, 15, 15, fill="yellow")
+        oval = self.pacman.circle.create_arc(0, 0, 15, 15, start = 225, extent = 270, fill="yellow")
         
         for ghost in self.ghosts_group.ghosts:
 
@@ -94,8 +150,11 @@ class Display():
 
         self.score_label = Label(self.root, text="Score: ", font=("Menlo", 20))
         self.score_label.place(x=10, y=31*16, width=80)
-        self.score_val = Label(self.root, text=str(self.pacman.score), font=("Menlo", 20))
+        self.score_val = Label(self.root, text=str(self.game.score), font=("Menlo", 20))
         self.score_val.place(x=80, y=31*16)
+
+        self.save_button = Button(self.root, text="Save", font=("Menlo", 14), command=self.save_game)
+        self.save_button.place(x=150, y = 31*16)
 
     def update_screen(self):
         
@@ -105,10 +164,10 @@ class Display():
         self.update_ghost_state(self.ghosts_group.state)
 
         if not self.game.paused:
-            self.root.after(50, self.update_screen)
+            self.root.after(70, self.update_screen)
 
     def update_pellets(self, t):
-        if t == 4:
+        if t == 2:
             for coord in self.pellets_group.power_pellets:
 
                 power = self.pellets_group.power_pellets[coord]
@@ -127,37 +186,33 @@ class Display():
 
     def update_pacman(self, direction):
 
-        for key in self.pacman.directions:
-            if self.pacman.directions[key] == direction:
-                direction_name = key
-                break
-
-        self.pacman.next_direction(direction_name, self.nodes_group)
+        self.pacman.next_direction(direction, self.nodes_group)
         if self.pacman.stopped != True:
             row_pixel, col_pixel = self.pacman.row_pixel, self.pacman.col_pixel
 
-            if direction == 1: 
-                row_pixel += 2
+            if direction == 1:
+                row_pixel += self.pacman_speed
 
             elif direction == -1:
-                row_pixel -= 2
+                row_pixel -= self.pacman_speed
 
             elif direction == 2:
-                col_pixel += 2
+                col_pixel += self.pacman_speed
 
                 if col_pixel > 28*16:
                     col_pixel = -16
 
             elif direction == -2:
-                col_pixel -= 2
+                col_pixel -= self.pacman_speed
 
                 if col_pixel < -16:
                     col_pixel = 28*16
 
             self.pacman.circle.place(x=col_pixel, y=row_pixel)
             self.pacman.row_pixel, self.pacman.col_pixel = row_pixel, col_pixel
-            self.pacman.position = self.pacman.get_position(row_pixel, col_pixel, self.pacman.direction)
+            self.pacman.position = self.pacman.get_position(row_pixel, col_pixel)
             self.update_score()
+        self.check_game_status()
 
     def update_ghosts(self):
 
@@ -171,19 +226,19 @@ class Display():
             direction = ghost.direction
 
             if direction == 1: 
-                row_pixel += 2
+                row_pixel += self.ghost_speed
 
             elif direction == -1:
-                row_pixel -= 2
+                row_pixel -= self.ghost_speed
 
             elif direction == 2:
-                col_pixel += 2
+                col_pixel += self.ghost_speed
 
                 if col_pixel > 28*16:
                     col_pixel = -16
 
             elif direction == -2:
-                col_pixel -= 2
+                col_pixel -= self.ghost_speed
 
                 if col_pixel < -16:
                     col_pixel = 28*16
@@ -211,13 +266,13 @@ class Display():
                 self.ghosts_group.state = new_state
                 self.time = 0
                 self.change = True
-                print(self.time, "hey")
 
         else:
 
             if self.change == True:
                 self.prev_time = self.time 
                 self.time = 0
+                self.ghost_eaten = 0
 
             self.ghosts_group.frightened(self.ghosts_group.ghosts, self.nodes_group, self.change)
 
@@ -233,13 +288,13 @@ class Display():
         pacman_coord = self.pacman.col_pixel+8, self.pacman.row_pixel+8
 
         if pacman_coord in self.pellets_group.pellets_coord:
-            self.pacman.score += self.pellets_group.pellets[self.pacman.position].points
+            self.game.score += self.pellets_group.pellets[self.pacman.position].points
             self.pellets_group.pellets.pop(self.pacman.position)
             self.pellets_group.pellets_coord.remove(pacman_coord)
             self.pellets_canvas[self.pacman.position][0].destroy()
 
         elif pacman_coord in self.pellets_group.power_pellets_coord:
-            self.pacman.score += self.pellets_group.power_pellets[self.pacman.position].points
+            self.game.score += self.pellets_group.power_pellets[self.pacman.position].points
             self.pellets_group.power_pellets.pop(self.pacman.position)
             self.pellets_group.power_pellets_coord.remove(pacman_coord)
             self.pellets_canvas[self.pacman.position][0].destroy()
@@ -247,12 +302,12 @@ class Display():
             self.change = True
             self.update_ghost_state("FRIGHTENED")
 
-        self.score_val["text"] = str(self.pacman.score)
+        self.score_val["text"] = str(self.game.score)
 
     def inputs(self, event):
         if event.keysym in self.pacman_keys:
-            if (self.pacman.col_pixel+8, self.pacman.row_pixel+8) in self.nodes_group.nodes_coord or self.pacman.directions[event.keysym.upper()] == self.pacman.direction*-1:
-                self.pacman.next_direction(event.keysym, self.nodes_group)
+            if self.pacman.position in self.nodes_group.nodes or self.pacman.directions[event.keysym] == self.pacman.direction*-1:
+                self.pacman.next_direction(self.pacman.directions[event.keysym], self.nodes_group)
 
         if event.keysym == "space":
             self.game.paused = not self.game.paused
@@ -260,6 +315,66 @@ class Display():
                 self.update_screen() 
                 self.update_ghost_state(self.ghosts_group.state)
 
+    def check_game_status(self):
+        for ghost in self.ghosts_group.ghosts:
+
+            if ghost.row_pixel == self.pacman.row_pixel and ghost.col_pixel == self.pacman.col_pixel:
+                if self.ghosts_group.state != "FRIGHTENED":
+                    self.game.paused = True
+                    return
+                else:
+                    self.game.score += 200 * (self.ghost_eaten + 1)
+                    self.ghost_eaten += 1
+
+            if abs(ghost.row_pixel-self.pacman.row_pixel)<5 and abs(ghost.col_pixel-self.pacman.col_pixel)<5 and ghost.direction == (self.pacman.direction * -1):
+                if self.ghosts_group.state != "FRIGHTENED":
+                    self.game.paused = True
+                    return
+                else:
+                    self.game.score += 200 * (self.ghost_eaten + 1)
+                    self.ghost_eaten += 1
+
+        if self.pellets_group.pellets == {} and self.pellets_group.power_pellets == {}:
+            self.game.paused = True
+            self.save_high_score()
+
+    def save_high_score(self):
+
+        with open("HighScore.txt") as f:
+            high_score_list = f.read().split()
+            high_score = int(high_score_list[0])
+
+            if self.game.score > high_score:
+                high_score_list = [str(self.game.score)] + high_score_list
+
+                if len(high_score_list) > 3:
+                    high_score_list = high_score_list[:3]
+
+                with open("HighScore.txt", "w") as f:
+                    high_score_list = "\n".join(high_score_list)
+                    f.write(high_score_list)
+
+    def save_game(self):
+
+        temp_pellets = self.pellets_group.pellets.keys()
+        temp_pellets = [str(coord) for coord in temp_pellets]
+        temp_pellets = ":".join(temp_pellets)
+
+        temp_power_pellets = self.pellets_group.power_pellets.keys()
+        temp_power_pellets = [str(coord) for coord in temp_power_pellets]
+        temp_power_pellets = ":".join(temp_power_pellets)
+
+        game_details = [
+            str(self.game.lvl),
+            str(self.pacman.lives),
+            str(self.game.score),
+            temp_pellets,
+            temp_power_pellets
+        ]
+        game_details = "\n".join(game_details)
+
+        with open("GameSave.txt", "w") as f:
+            f.write(game_details)
 
 if __name__ == "__main__":
     game = Game("map.txt")
