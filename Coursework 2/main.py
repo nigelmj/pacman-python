@@ -38,8 +38,8 @@ class Display():
         self.canvas_bg.create_image(0, 0, image=bg, anchor="nw")
 
         self.game.paused = True
-        self.pacman_keys = ["Up", "Down", "Left", "Right"]
-        self.root.bind("<Key>", self.inputs)
+        self.player, self.key_up, self.key_left, self.key_down, self.key_right = self.load_settings()
+        
         self.t = 1
         self.time = 0
         self.change = False
@@ -47,61 +47,45 @@ class Display():
         self.menu()
 
         self.root.mainloop()
+        self.save_high_score()
+        self.save_game()
 
     def menu(self):
         self.menu_frame = LabelFrame(self.root, bd=0)
-        self.menu_frame.place(x=130, y=130, width=190, height=250)
+        self.menu_frame.place(x=100, y=100, width=250, height=300)
 
         continue_button = Button(self.menu_frame, text="Continue", command=self.load_game, font=("Menlo", 16))
-        continue_button.place(x=20, y=20, height=40, width=150)
+        continue_button.place(x=50, y=20, height=40, width=150)
         
         new_button = Button(self.menu_frame, text="New Game", command=self.start_game, font=("Menlo", 16))
-        new_button.place(x=20, y=80, height=40, width=150)
+        new_button.place(x=50, y=75, height=40, width=150)
 
-        high_score_button = Button(self.menu_frame, text="High Scores", command=self.menu_frame.destroy, font=("Menlo", 16))
-        high_score_button.place(x=20, y=140, height=40, width=150)
+        high_score_button = Button(self.menu_frame, text="High Scores", command=self.show_high_score, font=("Menlo", 16))
+        high_score_button.place(x=50, y=130, height=40, width=150)
 
         cheat_button = Button(self.menu_frame, text="Enter Code", command=self.menu_frame.destroy, font=("Menlo", 16))
-        cheat_button.place(x=20, y=200, height=40, width=150)
+        cheat_button.place(x=50, y=185, height=40, width=150)
 
-    def load_game(self):
-        with open("GameSave.txt") as f:
-            data = f.read().split("\n")
-
-            self.game.lvl = int(data[0])
-            self.pacman.lives = int(data[1])
-            self.game.score = int(data[2])
-
-            temp_pellets = data[3].split(":")
-            temp_power_pellets = data[4].split(":")
-
-            self.pellets_group.pellets = {}
-            self.pellets_group.power_pellets = {}
-
-            for pellet in temp_pellets:
-                pellet = pellet[1:-1].split(',')
-
-                row = int(pellet[0])
-                col = int(pellet[1])
-                self.pellets_group.pellets[(row, col)] = Pellet(row, col)
-
-            for power_pellet in temp_power_pellets:
-                power_pellet = power_pellet[1:-1].split(',')
-
-                row = int(power_pellet[0])
-                col = int(power_pellet[1])
-                self.pellets_group.power_pellets[(row, col)] = PowerPellet(row, col)
-
-            self.start_game()
+        settings_button = Button(self.menu_frame, text="Settings", command=self.show_settings, font=("Menlo", 16))
+        settings_button.place(x=50, y=240, height=40, width=150)
 
     def start_game(self):
 
         self.menu_frame.destroy()
+
+        self.pacman_keys = {
+            self.key_up : 'Up', 
+            self.key_left : 'Left', 
+            self.key_down : 'Down', 
+            self.key_right : 'Right'
+        }
+        
+        self.root.bind("<Key>", self.inputs)
         self.game.paused = False
-        self.display()
         self.counter()
-        self.update_ghost_state("SCATTER")
+        self.display()
         self.update_screen()
+        self.update_ghost_state("SCATTER")
         
     def counter(self):
         if self.game.paused != True:
@@ -152,9 +136,6 @@ class Display():
         self.score_label.place(x=10, y=31*16, width=80)
         self.score_val = Label(self.root, text=str(self.game.score), font=("Menlo", 20))
         self.score_val.place(x=80, y=31*16)
-
-        self.save_button = Button(self.root, text="Save", font=("Menlo", 14), command=self.save_game)
-        self.save_button.place(x=150, y = 31*16)
 
     def update_screen(self):
         
@@ -306,8 +287,9 @@ class Display():
 
     def inputs(self, event):
         if event.keysym in self.pacman_keys:
-            if self.pacman.position in self.nodes_group.nodes or self.pacman.directions[event.keysym] == self.pacman.direction*-1:
-                self.pacman.next_direction(self.pacman.directions[event.keysym], self.nodes_group)
+            side = self.pacman_keys[event.keysym]
+            if self.pacman.position in self.nodes_group.nodes or self.pacman.directions[side] == self.pacman.direction*-1:
+                self.pacman.next_direction(self.pacman.directions[side], self.nodes_group)
 
         if event.keysym == "space":
             self.game.paused = not self.game.paused
@@ -326,7 +308,7 @@ class Display():
                     self.game.score += 200 * (self.ghost_eaten + 1)
                     self.ghost_eaten += 1
 
-            if abs(ghost.row_pixel-self.pacman.row_pixel)<5 and abs(ghost.col_pixel-self.pacman.col_pixel)<5 and ghost.direction == (self.pacman.direction * -1):
+            elif abs(ghost.row_pixel-self.pacman.row_pixel)<5 and abs(ghost.col_pixel-self.pacman.col_pixel)<5 and ghost.direction == (self.pacman.direction * -1):
                 if self.ghosts_group.state != "FRIGHTENED":
                     self.game.paused = True
                     return
@@ -341,18 +323,44 @@ class Display():
     def save_high_score(self):
 
         with open("HighScore.txt") as f:
-            high_score_list = f.read().split()
-            high_score = int(high_score_list[0])
+            high_score_list = f.read().split("\n")
+            for high_score in high_score_list:
 
-            if self.game.score > high_score:
-                high_score_list = [str(self.game.score)] + high_score_list
+                index = high_score_list.index(high_score)
+                high_score = high_score.split()
+                high_score_val = int(high_score[1])
 
-                if len(high_score_list) > 3:
-                    high_score_list = high_score_list[:3]
+                if self.game.score > high_score_val:
 
-                with open("HighScore.txt", "w") as f:
-                    high_score_list = "\n".join(high_score_list)
-                    f.write(high_score_list)
+                    self.player = self.player.strip()
+
+                    high_score_list = high_score_list[0:index] + [self.player + ": " + str(self.game.score)] + high_score_list[index:]
+
+                    if len(high_score_list) > 5:
+                        high_score_list = high_score_list[:5]
+
+                    with open("HighScore.txt", "w") as f:
+                        high_score_list = "\n".join(high_score_list)
+                        f.write(high_score_list)
+
+                    break
+
+    def show_high_score(self):
+
+        self.high_score_frame = LabelFrame(self.root, bd=0)
+        self.high_score_frame.place(x=100, y=100, width=250, height=300)
+
+        with open("HighScore.txt") as f:
+            high_score_list = f.read().split("\n")
+            for index in range(len(high_score_list)):
+                text = str(index+1) + ". " + high_score_list[index]
+                row = int(text[0])
+
+                score_info = Label(self.high_score_frame, text=text, font=("Menlo", 16))
+                score_info.place(x=50, y=20+(40*(row-1)), height=40, width=150)
+
+        back_button = Button(self.high_score_frame, text="Back", command=self.high_score_frame.destroy, font=("Menlo", 16))
+        back_button.place(x=50, y=240, height=40, width=150)
 
     def save_game(self):
 
@@ -365,7 +373,6 @@ class Display():
         temp_power_pellets = ":".join(temp_power_pellets)
 
         game_details = [
-            str(self.game.lvl),
             str(self.pacman.lives),
             str(self.game.score),
             temp_pellets,
@@ -375,6 +382,125 @@ class Display():
 
         with open("GameSave.txt", "w") as f:
             f.write(game_details)
+
+    def load_game(self):
+        with open("GameSave.txt") as f:
+            data = f.read().split("\n")
+
+            self.pacman.lives = int(data[0])
+            self.game.score = int(data[1])
+
+            temp_pellets = data[2].split(":")
+            temp_power_pellets = data[3].split(":")
+
+            self.pellets_group.pellets = {}
+            self.pellets_group.power_pellets = {}
+
+            for pellet in temp_pellets:
+                pellet = pellet[1:-1].split(',')
+
+                row = int(pellet[0])
+                col = int(pellet[1])
+                self.pellets_group.pellets[(row, col)] = Pellet(row, col)
+
+            for power_pellet in temp_power_pellets:
+                power_pellet = power_pellet[1:-1].split(',')
+
+                row = int(power_pellet[0])
+                col = int(power_pellet[1])
+                self.pellets_group.power_pellets[(row, col)] = PowerPellet(row, col)
+
+            self.start_game()
+
+    def show_settings(self):
+        self.settings_frame = LabelFrame(self.root, bd=0)
+        self.settings_frame.place(x=100, y=100, width=250, height=300)
+
+        self.name_entry = Entry(self.settings_frame, bg="white", fg="black", font=("Menlo", 16), justify=CENTER)
+        self.name_entry.place(x=50, y=20, height=40, width=150)
+        self.name_entry.insert(0, self.player)
+
+        up_label = Label(self.settings_frame, text="Move Up: ", font=("Menlo", 13), anchor="w", bd=5)
+        up_label.place(x=40, y=85, height=20, width=100)
+        self.up_val = Label(self.settings_frame, text=self.key_up, font=("Menlo", 13), anchor="w")
+        self.up_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Up"))
+        self.up_val.place(x=150, y=85, height=20, width=50)
+
+        left_label = Label(self.settings_frame, text="Move Left: ", font=("Menlo", 13), anchor="w")
+        left_label.place(x=40, y=120, height=20, width=100)
+        self.left_val = Label(self.settings_frame, text=self.key_left, font=("Menlo", 13), anchor="w")
+        self.left_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Left"))
+        self.left_val.place(x=150, y=120, height=20, width=50)
+
+        down_label = Label(self.settings_frame, text="Move Down: ", font=("Menlo", 13), anchor="w")
+        down_label.place(x=40, y=155, height=20, width=100)
+        self.down_val = Label(self.settings_frame, text=self.key_down, font=("Menlo", 13), anchor="w")
+        self.down_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Down"))
+        self.down_val.place(x=150, y=155, height=20, width=50)
+
+        right_label = Label(self.settings_frame, text="Move Right: ", font=("Menlo", 13), anchor="w")
+        right_label.place(x=40, y=190, height=20, width=100)
+        self.right_val = Label(self.settings_frame, text=self.key_right, font=("Menlo", 13), anchor="w")
+        self.right_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Right"))
+        self.right_val.place(x=150, y=190, height=20, width=50)
+
+        save_button = Button(self.settings_frame, text="Save", command=self.save_settings, font=("Menlo", 16))
+        save_button.place(x=40, y=240, height=40, width=75)
+
+        back_button = Button(self.settings_frame, text="Back", command=self.settings_frame.destroy, font=("Menlo", 16))
+        back_button.place(x=130, y=240, height=40, width=75)
+
+    def select_key_label(self, event, side):
+        if side == "Up":
+            self.up_val.focus_set()
+            self.up_val.bind("<Key>", lambda event: self.set_key(event, side))
+        elif side == "Left":
+            self.left_val.focus_set()
+            self.left_val.bind("<Key>", lambda event: self.set_key(event, side))
+        elif side == "Down":
+            self.down_val.focus_set()
+            self.down_val.bind("<Key>", lambda event: self.set_key(event, side))
+        elif side == "Right":
+            self.right_val.focus_set()
+            self.right_val.bind("<Key>", lambda event: self.set_key(event, side))
+
+    def set_key(self, event, side):
+
+        if side == "Up":
+            self.up_val["text"] = event.keysym
+        elif side == "Left":
+            self.left_val["text"] = event.keysym
+        elif side == "Down":
+            self.down_val["text"] = event.keysym
+        elif side == "Right":
+            self.right_val["text"] = event.keysym
+
+    def save_settings(self):
+        self.player = self.name_entry.get().strip()
+        self.key_up = self.up_val["text"]
+        self.key_left = self.left_val["text"]
+        self.key_down = self.down_val["text"]
+        self.key_right = self.right_val["text"]
+
+        self.settings_frame.destroy()
+
+        with open("Settings.txt", "w") as f:
+            text = [
+                self.player,
+                self.key_up,
+                self.key_left,
+                self.key_down,
+                self.key_right
+            ]
+
+            text = "\n".join(text)
+            f.write(text)
+
+    def load_settings(self):
+        with open("Settings.txt") as f:
+            data = f.read().split("\n")
+
+            return data[0].strip(), data[1].strip(), data[2].strip(), data[3].strip(), data[4].strip()
 
 if __name__ == "__main__":
     game = Game("map.txt")

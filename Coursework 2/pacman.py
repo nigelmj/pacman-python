@@ -10,7 +10,6 @@ class Game():
         self.score = 0
         self.nodes_group = Nodes_group()
         self.pellets_group = Pellets_group()
-        self.lvl = 1
 
         self.nodes_group.create_nodes(self.grid, x, y)
         self.nodes_group.connect_nodes_row_wise(x, y, self.grid)
