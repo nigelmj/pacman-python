@@ -1,5 +1,5 @@
-Bar: 2040
-Foo: 1660
-Foo: 1530
-Foo: 1520
+LOL: 4160
+LOL: 3290
+Foo: 1910
+Nigel: 1500
 Nigel: 1440

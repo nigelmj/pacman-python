@@ -17,6 +17,12 @@ class Game():
 
         self.pellets_group.create_pellets(self.grid, x, y)
 
+        self.pacman = Pacman(23, 13)
+        self.ghosts_group = Ghosts_group("SCATTER")
+
+        self.pacman.speed = 4
+        self.ghosts_group.speed = 4
+
     def create_grid(self, map):
         file = open(map)
         temp_grid = file.read().split('\n')
@@ -37,6 +43,13 @@ class Pacman():
         self.position = row, col
         self.row_pixel = self.position[0]*16
         self.col_pixel = self.position[1]*16
+
+        self.keys = {
+            None : 'Up', 
+            None : 'Left', 
+            None : 'Down', 
+            None : 'Right'
+        }
         
         self.directions = {"Up": -1, "Left": -2, "Down": 1, "Right": 2}
         self.direction = self.directions["Left"]
@@ -89,6 +102,8 @@ class Ghost():
 
         self.directions = {"Up": -1, "Left": -2, "Down": 1, "Right": 2}
         self.direction = self.directions["Left"]
+
+        self.pictures = {-1: None, -2: None, 1: None, 2: None}
 
     def calculate_available_directions_ghost(self, direction, nodes_group):
         available_directions = []
@@ -213,7 +228,8 @@ class Ghosts_group():
 
     def scatter(self, ghosts, change):
         for ghost in ghosts:
-            ghost.circle.itemconfig(ghost.oval, fill=self.colour[ghost.name])
+            ghost.image.itemconfig(ghost.container, image = ghost.pictures[ghost.direction])
+
             if ghost.name == "Blinky":
                 ghost.target = (0, 25)
             elif ghost.name == "Pinky":
@@ -229,7 +245,8 @@ class Ghosts_group():
     def chase(self, ghosts, pacman_position, pacman_direction, blinky_position, change):
 
         for ghost in ghosts:
-            ghost.circle.itemconfig(ghost.oval, fill=self.colour[ghost.name])
+            ghost.image.itemconfig(ghost.container, image = ghost.pictures[ghost.direction])
+
             if ghost.name == "Blinky":
                 ghost.target = pacman_position
             elif ghost.name == "Pinky":
@@ -244,7 +261,7 @@ class Ghosts_group():
     
     def frightened(self, ghosts, nodes_group, change):
         for ghost in ghosts:
-            ghost.circle.itemconfig(ghost.oval, fill="blue")
+            ghost.image.itemconfig(ghost.container, image = ghost.fright_picture)
             available_directions = ghost.calculate_available_directions_ghost(ghost.direction, nodes_group)
 
             if change == True:

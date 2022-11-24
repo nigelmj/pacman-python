@@ -1,5 +1,6 @@
-Bar
-i
-j
-k
-l
+LOL
+Up
+Left
+Down
+Right
+space
