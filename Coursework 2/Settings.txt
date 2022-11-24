@@ -3,4 +3,4 @@ Up
 Left
 Down
 Right
-space
+t

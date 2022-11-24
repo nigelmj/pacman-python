@@ -23,6 +23,12 @@ class Game():
         self.pacman.speed = 4
         self.ghosts_group.speed = 4
 
+        self.codes = {
+            "MORELIVES" : False,
+            "SCARYPAC" : False,
+            "PELLETMASTER" : False
+        }
+
     def create_grid(self, map):
         file = open(map)
         temp_grid = file.read().split('\n')
