@@ -2,6 +2,7 @@ import random
 from math import sqrt
 
 class Game():
+    '''Game class to create necessary data and other objects'''
     def __init__(self, map):
         self.grid = []
         self.paused = False
@@ -32,6 +33,7 @@ class Game():
         }
 
     def create_grid(self, map):
+        '''Creates a 2d matrix using the map text file'''
         file = open(map)
         temp_grid = file.read().split('\n')
         for row in temp_grid:
@@ -42,9 +44,13 @@ class Game():
         return (len(self.grid), len(row))
 
     def spawn(self):
+        '''Spawns the ghosts in the ghost house and pacman near the bottom'''
         self.pacman.row_pixel, self.pacman.col_pixel = 23*16, 13*16+8
         self.pacman.direction = -2
+        self.ghosts_group.state = "SCATTER"
         for ghost in self.ghosts_group.ghosts:
+            ghost.died = False
+            ghost.new_spawned = False
             if ghost.name == "Blinky":
                 ghost.row_pixel, ghost.col_pixel = 11*16, 14*16
                 ghost.direction = -2
@@ -57,8 +63,10 @@ class Game():
             elif ghost.name == "Clyde":
                 ghost.row_pixel, ghost.col_pixel = 13*16, 12*16
                 ghost.direction = 1
+            ghost.image.itemconfig(ghost.container, image = ghost.pictures[ghost.direction])
 
 class Pacman():
+    '''Pacman class for controlling pacman'''
     def __init__(self, row, col):
 
         self.stopped = False
@@ -80,6 +88,7 @@ class Pacman():
         self.direction = self.directions["Left"]
 
     def calculate_available_directions(self, direction, nodes_group):
+        '''Returns a list containing valid directions pacman can take'''
         available_directions = []
         available_directions.append(direction * -1)
 
@@ -93,7 +102,7 @@ class Pacman():
         return list(set(available_directions))
 
     def next_direction(self, direction, nodes_group):
-
+        '''Changes the direction of pacman using the direction parameter'''
         available_directions = self.calculate_available_directions(self.direction, nodes_group)
         if direction in available_directions:
 
@@ -104,7 +113,7 @@ class Pacman():
             self.stopped = True
 
     def get_position(self, row_pixel, col_pixel):
-        
+        '''Returns the position of pacman using his coordinates'''
         row = (row_pixel)//16 
         col = (col_pixel)//16 
 
@@ -116,6 +125,7 @@ class Pacman():
         return row, col
 
 class Ghost():
+    '''Ghost class creates the individual ghosts'''
     def __init__(self, name, target, row, col):
         self.name = name
 
@@ -130,12 +140,12 @@ class Ghost():
 
         self.pictures = {-1: None, -2: None, 1: None, 2: None}
 
-        self.paused = False
         self.died = False
         self.new_spawned = False
         self.in_home = False
 
     def calculate_available_directions_ghost(self, direction, nodes_group):
+        '''Returns a list containing valid directions the ghost can take'''
         available_directions = []
 
         if self.died != True and self.position == (11, 14):
@@ -157,7 +167,7 @@ class Ghost():
                 self.target = (30, 27)
             elif self.name == "Clyde":
                 self.target = (30, 0)
-            return [direction*-1]
+            return [direction*(-1)]
 
         if self.position in nodes_group.nodes:
             neighbours = nodes_group.nodes[self.position].neighbours
@@ -171,6 +181,7 @@ class Ghost():
         return list(set(available_directions))
 
     def pinky_target(self, target, direction):
+        '''Returns pinky's target, which is 4 tiles ahead of pacman'''
         x, y = target
         if direction == -1:
             x -= 4
@@ -185,6 +196,7 @@ class Ghost():
         return x, y
 
     def inky_target(self, target, direction, blinky_position):
+        '''Returns inky's target, which is determind by both pacman and blinky to ambush pacman from the front'''
         x1, y1 = target
         x2, y2 = blinky_position
 
@@ -204,6 +216,7 @@ class Ghost():
         return x, y
 
     def clyde_target(self, target):
+        '''Returns clyde's target which is similar to blinky, but clyde goes to scatter mode when he gets close to pacman'''
         x1, y1 = self.position
         x2, y2 = target
         distance = sqrt((x1-x2)**2 + (y1-y2)**2)
@@ -213,6 +226,7 @@ class Ghost():
             return target
 
     def calculate_target_distance(self, direction, target):
+        '''Returns the distance between the ghost and it's target'''
         x1, y1 = self.position
         if direction == -1:
             x1 -= 1
@@ -228,13 +242,11 @@ class Ghost():
         return sqrt((x1-x2)**2 + (y1-y2)**2)
 
     def next_direction_ghost(self, nodes_group, target):
-
+        '''Determines the ghost's direction by choosing the tile closest to its target'''
         available_directions = self.calculate_available_directions_ghost(self.direction, nodes_group)
-        try:
-            distance = self.calculate_target_distance(available_directions[0], target)
-        except IndexError:
-            print(self.name, self.calculate_available_directions_ghost(self.direction, nodes_group))
-            print(self.target)
+
+        distance = self.calculate_target_distance(available_directions[0], target)
+
         self.direction = available_directions[0]
         for direction in available_directions:
             temp_distance = self.calculate_target_distance(direction, target)
@@ -243,7 +255,7 @@ class Ghost():
                 self.direction = direction
 
     def get_position(self, row_pixel, col_pixel, direction):
-        
+        '''Returns the position of the ghost using its coordinates'''
         row = (row_pixel)//16 
         col = (col_pixel)//16 
 
@@ -255,6 +267,7 @@ class Ghost():
         return row, col
 
 class Ghosts_group():
+    '''Ghost class for grouping the ghosts'''
     def __init__(self, state):
 
         self.ghosts = [
@@ -281,6 +294,7 @@ class Ghosts_group():
         self.canvas = {}
 
     def scatter(self, ghosts, change):
+        '''Changes the ghost targets to corners to the map'''
         for ghost in ghosts:
             ghost.image.itemconfig(ghost.container, image = ghost.pictures[ghost.direction])
 
@@ -301,10 +315,9 @@ class Ghosts_group():
                 ghost.direction = -1
                 ghost.died = False
                 ghost.new_spawned = False
-                ghost.paused = False
 
     def chase(self, ghosts, pacman_position, pacman_direction, blinky_position, change):
-
+        '''Changes the ghost targets to catch pacman'''
         for ghost in ghosts:
             ghost.image.itemconfig(ghost.container, image = ghost.pictures[ghost.direction])
 
@@ -321,63 +334,83 @@ class Ghosts_group():
                 ghost.direction *= -1
                 ghost.died = False
                 ghost.new_spawned = False
-                ghost.paused = False
     
     def frightened(self, ghosts, nodes_group, change):
+        '''Changes the ghost target to frantically pick any direction'''
         for ghost in ghosts:
-            if not ghost.died and not ghost.new_spawned:
+
+            if change == True:
+                ghost.direction *= -1
+                ghost.died = False
+                ghost.new_spawned = False
                 ghost.image.itemconfig(ghost.container, image = ghost.fright_picture)
+
+            if ghost.died or ghost.new_spawned:
+                self.died(ghost)
+
+            elif (ghost.col_pixel+8, ghost.row_pixel+8) in nodes_group.nodes_coord:
                 available_directions = ghost.calculate_available_directions_ghost(ghost.direction, nodes_group)
+                ghost.image.itemconfig(ghost.container, image = ghost.fright_picture)
 
-                if change == True:
-                    ghost.direction *= -1
-                    ghost.died = False
-                    ghost.new_spawned = False
-                    ghost.paused = False
+                ghost.direction = random.choice(available_directions)
+                x, y = ghost.position
+                
+                if ghost.direction == -1:
+                    x -= 1
+                elif ghost.direction == -2:
+                    y -= 1
+                elif ghost.direction == 1:
+                    x += 1
+                elif ghost.direction == 2:
+                    y += 1
+                
+                ghost.target = x, y
 
-                elif (ghost.col_pixel+8, ghost.row_pixel+8) in nodes_group.nodes_coord:
-
-                    ghost.direction = random.choice(available_directions)
-                    x, y = ghost.position
-                    
-                    if ghost.direction == -1:
-                        x -= 1
-                    elif ghost.direction == -2:
-                        y -= 1
-                    elif ghost.direction == 1:
-                        x += 1
-                    elif ghost.direction == 2:
-                        y += 1
-                    
-                    ghost.target = x, y
-
-            else: self.died(ghost)
+            else: ghost.image.itemconfig(ghost.container, image = ghost.fright_picture)
 
     def died(self, ghost):
-        if ghost.name == "Blinky":
-            ghost.target = (14, 12)
-        elif ghost.name == "Pinky":
-            ghost.target = (14, 15)
-        elif ghost.name == "Inky":
-            ghost.target = (13, 15)
-        elif ghost.name == "Clyde":
-            ghost.target = (13, 14)
-        
-        if ghost.position == (11, 14):
-            ghost.in_home = True
+        '''Sends the ghost back to ghost house after it is caught by pacman in frightened mode'''
+        if ghost.new_spawned == False:
+            if ghost.name == "Blinky":
+                ghost.target = (14, 12)
+            elif ghost.name == "Pinky":
+                ghost.target = (14, 15)
+            elif ghost.name == "Inky":
+                ghost.target = (13, 12)
+            elif ghost.name == "Clyde":
+                ghost.target = (13, 15)
+            
+            if ghost.position == (11, 14):
+                ghost.in_home = True
+
+        else:
+            if ghost.name == "Blinky":
+                ghost.target = (0, 25)
+            elif ghost.name == "Pinky":
+                ghost.target = (0, 3)
+            elif ghost.name == "Inky":
+                ghost.target = (30, 27)
+            elif ghost.name == "Clyde":
+                ghost.target = (30, 0)
+
+            if ghost.position == (11, 14):
+                ghost.in_home = False
 
 class Node():
+    '''Node class to create nodes where pacman and ghosts can change directions'''
     def __init__(self, x, y):
 
         self.position = (x, y)
         self.neighbours = {"Up": None, "Left": None, "Down": None, "Right": None}
 
 class Nodes_group():
+    '''Nodes group class to group the nodes together'''
     def __init__(self):
         self.nodes = {}
         self.nodes_coord = []
 
     def create_nodes(self, grid, x, y):
+        '''Creates the nodes from the grid'''
         for row in range(x):
             for col in range(y):
 
@@ -386,6 +419,7 @@ class Nodes_group():
                     self.nodes[(row,col)] = node
 
     def connect_nodes_row_wise(self, x, y, grid):
+        '''Sets the right and left neighbours of each node'''
         for row in range(x):
             previous_node = None
 
@@ -408,6 +442,7 @@ class Nodes_group():
                         self.nodes[(row, 27)].neighbours["Right"] = self.nodes[(row, col)]
 
     def connect_nodes_col_wise(self, x, y, grid):
+        '''Sets the top and bottom neighbours of each node'''
         for col in range(y):
             previous_node = None
 
@@ -426,18 +461,20 @@ class Nodes_group():
                     previous_node = self.nodes[(row,col)]
 
 class Pellet():
+    '''Pellet class to create the normal pellets'''
     def __init__(self, x, y):
         self.position = (x, y)
         self.consumed = False
 
 class PowerPellet():
+    '''Power pellet class to create the 4 power pellets'''
     def __init__(self, x, y):
         self.position = (x, y)
         self.consumed = False
         self.visible = True
-        self.timer = 10
 
 class Pellets_group():
+    '''Pellets group class to group the tiny and power pellets together'''
     def __init__(self):
         self.pellets = {}
         self.power_pellets = {}
@@ -449,6 +486,7 @@ class Pellets_group():
         }
 
     def create_pellets(self, grid, x, y):
+        '''Creates the different pellets from the grid'''
         for row in range(x):
             for col in range(y):
 

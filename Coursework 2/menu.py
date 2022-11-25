@@ -2,6 +2,7 @@ from tkinter import *
 from pacman import *
 
 class Menu():
+    '''Menu class for showing menu'''
     def __init__(self, root, game, pacman, ghosts_group, start_game, resume_game):
         self.root = root
         self.game = game
@@ -12,6 +13,7 @@ class Menu():
         self.resume_game = resume_game
 
     def show_menu(self):
+        '''Creates a menu and shows different available options'''
         self.menu_frame = LabelFrame(self.root, bd=0)
         self.menu_frame.place(x=100, y=100, width=250, height=300)
 
@@ -43,7 +45,7 @@ class Menu():
         settings_button.place(x=50, y=185+pos, height=40, width=150)
 
     def save_high_score(self):
-
+        '''Saves a new high score after the end of a game'''
         with open("HighScore.txt") as f:
             high_score_list = f.read().split("\n")
             for high_score in high_score_list:
@@ -68,7 +70,7 @@ class Menu():
                     break
 
     def show_high_score(self):
-
+        '''Creates a frame showing the top 5 scores'''
         self.high_score_frame = LabelFrame(self.root, bd=0)
         self.high_score_frame.place(x=100, y=100, width=250, height=300)
 
@@ -85,7 +87,7 @@ class Menu():
         back_button.place(x=50, y=240, height=40, width=150)
 
     def save_game(self):
-
+        '''Saves the game onto a file after the player has closed the window'''
         temp_pellets = self.pellets_group.pellets.keys()
         temp_pellets = [str(coord) for coord in temp_pellets]
         temp_pellets = ":".join(temp_pellets)
@@ -106,6 +108,7 @@ class Menu():
             f.write(game_details)
 
     def check_game_save(self):
+        '''Checks if there is an existing save file for the game'''
         with open("GameSave.txt") as f:
             data = f.read()
             if data == "":
@@ -113,6 +116,7 @@ class Menu():
             return True
 
     def load_game(self):
+        '''Loads the game contents from the save file'''
         with open("GameSave.txt") as f:
             data = f.read().split("\n")
 
@@ -144,6 +148,7 @@ class Menu():
             self.start_game()
 
     def enter_code(self):
+        '''Creates a frame to enter Cheat Codes'''
         self.codes_frame = LabelFrame(self.root, bd=0)
         self.codes_frame.place(x=100, y=100, width=250, height=300)
 
@@ -161,6 +166,7 @@ class Menu():
         back_button.place(x=90, y=200, height=40, width=75)
 
     def submit_code(self):
+        '''Submits the entered Cheat Code and validates it'''
         code = self.code_entry.get().strip()
         if code in self.game.codes:
 
@@ -191,6 +197,7 @@ class Menu():
             self.code_info["text"] = text
 
     def show_settings(self):
+        '''Creates a frame to allow the player to change the controls of pacman'''
         self.settings_frame = LabelFrame(self.root, bd=0)
         self.settings_frame.place(x=100, y=100, width=250, height=300)
 
@@ -242,7 +249,7 @@ class Menu():
         back_button.place(x=130, y=250, height=30, width=75)
 
     def select_key_label(self, event, key):
-
+        '''Selects the controls to be changed'''
         self.up_val["bg"] = "white"
         self.left_val["bg"] = "white"
         self.down_val["bg"] = "white"
@@ -276,7 +283,7 @@ class Menu():
             self.boss_key_val.bind("<Key>", lambda event: self.set_key(event, key))
 
     def set_key(self, event, key):
-
+        '''Sets the new controls of pacman'''
         if key == "Up":
             self.up_val["text"] = event.keysym
         elif key == "Left":
@@ -291,6 +298,7 @@ class Menu():
             self.boss_key_val["text"] = event.keysym
 
     def save_settings(self):
+        '''Saves the new controls into a settings file'''
         if self.game.player != self.name_entry.get().strip():
             f = open("GameSave.txt", "w")
             f.close()
@@ -322,6 +330,7 @@ class Menu():
             f.write(text)
 
     def load_settings(self):
+        '''Loads the current controls of pacman'''
         with open("Settings.txt") as f:
             data = f.read().split("\n")
 

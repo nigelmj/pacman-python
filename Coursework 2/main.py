@@ -1,5 +1,14 @@
 '''
+Nigel Martin Jose
+Coursework 2
+Task: To create a game using Tkinter
+My game: Replica of Retro Pacman
+
 Resolution: 1440x900
+Ghosts images created using https://www.pixilart.com/
+Boss key image from https://unsplash.com/photos/JKUTrJ4vK00
+Background map edited from https://pixabay.com/illustrations/pacman-game-video-game-nintendo-4121590/
+Pacman and pellets created using canvas shapes
 '''
 from tkinter import *
 import PIL
@@ -8,6 +17,7 @@ from pacman import *
 from menu import *
 
 class Display():
+    '''Display class for the main window'''
     def __init__(self, width, height):
         self.root = Tk()
         self.root.title("Pacman")
@@ -59,7 +69,7 @@ class Display():
         if self.pacman.lives > 0 and self.game.score > 0 and not self.game.won: self.menu.save_game()
 
     def start_game(self):
-
+        '''Starts the games by calling the necessary update and display functions'''
         self.menu.menu_frame.destroy()
         if self.game.start:
 
@@ -109,12 +119,13 @@ class Display():
 
         self.timeout_period = 3
         self.timeout_label = Label(self.canvas_bg, text="", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
-        self.timeout_label.place(x=13*16-8, y=17*16-5)
+        self.timeout_label.place(x=13*16-10, y=17*16-5)
         self.game.spawn()
         self.update_screen()
         self.timeout()
     
     def resume_game(self):
+        '''Resumes the game after the player paused it'''
         self.menu.menu_frame.destroy()
         self.lives_frame.destroy()
         self.display_lives()
@@ -127,16 +138,18 @@ class Display():
         }
 
         self.game.paused = False
-        self.counter()
+        self.timer()
         self.root.bind("<Key>", self.inputs)
         self.update_screen()
 
-    def counter(self):
+    def timer(self):
+        '''Creates a timer for changing ghost states'''
         if self.game.paused != True:
             self.time += 1
-            self.root.after(1000, self.counter)
+            self.root.after(1000, self.timer)
         
     def display(self):
+        '''Displays pellets, creates nodes_coords, images for ghosts and arc for pacman'''
         for indrow, row in enumerate(self.game.grid):
             for indcol, col in enumerate(row):
                 
@@ -205,6 +218,7 @@ class Display():
         self.display_lives()
 
     def display_lives(self):
+        '''Displays the number of lives left'''
 
         self.lives_frame = LabelFrame(self.root, bd=0)
         self.lives_frame.place(x=150, y=31*16, width=300, height=50)
@@ -215,7 +229,7 @@ class Display():
             self.life_arc = self.life_circle.create_arc(0, 0, 20, 20, start = 225, extent = 270, fill="yellow")
 
     def update_screen(self):
-        
+        '''Updates the screen every 70ms'''
         self.update_pellets(self.t)
         self.update_pacman(self.pacman.direction)
         self.update_ghosts()
@@ -225,6 +239,7 @@ class Display():
             self.root.after(70, self.update_screen)
 
     def update_pellets(self, t):
+        '''Creates the blinking effect of the power pellets'''
         if t == 2:
             for coord in self.pellets_group.power_pellets:
 
@@ -243,7 +258,7 @@ class Display():
         else: self.t += 1 
 
     def update_pacman(self, direction):
-
+        '''Updates the position of pacman'''
         self.pacman.next_direction(direction, self.nodes_group)
         if self.pacman.stopped != True:
             row_pixel, col_pixel = self.pacman.row_pixel, self.pacman.col_pixel
@@ -282,41 +297,40 @@ class Display():
         self.check_game_status()
 
     def update_ghosts(self):
-
+        '''Updates the position of the ghosts'''
         for ghost in self.ghosts_group.ghosts:
-            if ghost.paused != True:
-                if ghost.position in self.nodes_group.nodes:
-                    
-                    if (ghost.col_pixel+8, ghost.row_pixel+8) in self.nodes_group.nodes_coord:
-                        ghost.next_direction_ghost(self.nodes_group, ghost.target)
+            if ghost.position in self.nodes_group.nodes:
+                
+                if (ghost.col_pixel+8, ghost.row_pixel+8) in self.nodes_group.nodes_coord:
+                    ghost.next_direction_ghost(self.nodes_group, ghost.target)
 
-                row_pixel, col_pixel = ghost.row_pixel, ghost.col_pixel
-                direction = ghost.direction
+            row_pixel, col_pixel = ghost.row_pixel, ghost.col_pixel
+            direction = ghost.direction
 
-                speed = self.ghosts_group.speed
-                if ghost.died == True and not ghost.in_home:
-                    speed = self.ghosts_group.died_speed
-                    if row_pixel%16 != 0 or col_pixel%16 != 0:
-                        row_pixel -= row_pixel%16
-                        col_pixel -= col_pixel%16
+            speed = self.ghosts_group.speed
+            if ghost.died == True and not ghost.in_home:
+                speed = self.ghosts_group.died_speed
+                if row_pixel%16 != 0 or col_pixel%16 != 0:
+                    row_pixel -= row_pixel%16
+                    col_pixel -= col_pixel%16
 
-                if direction == 1: 
-                    row_pixel += speed
+            if direction == 1: 
+                row_pixel += speed
 
-                elif direction == -1:
-                    row_pixel -= speed
+            elif direction == -1:
+                row_pixel -= speed
 
-                elif direction == 2:
-                    col_pixel += speed
+            elif direction == 2:
+                col_pixel += speed
 
-                    if col_pixel > 28*16:
-                        col_pixel = -16
+                if col_pixel > 28*16:
+                    col_pixel = -16
 
-                elif direction == -2:
-                    col_pixel -= speed
+            elif direction == -2:
+                col_pixel -= speed
 
-                    if col_pixel < -16:
-                        col_pixel = 28*16
+                if col_pixel < -16:
+                    col_pixel = 28*16
 
             ghost.image.itemconfig(ghost.container, image = ghost.pictures[direction])
 
@@ -325,7 +339,7 @@ class Display():
             ghost.position = ghost.get_position(row_pixel, col_pixel, ghost.direction)
 
     def update_ghost_state(self, state):
-
+        '''Updates the ghost state by checking the time left on the timer'''
         if state != "FRIGHTENED":
             if state == "SCATTER":
                 self.ghosts_group.scatter(self.ghosts_group.ghosts, self.change)
@@ -364,6 +378,7 @@ class Display():
                 self.pacman.speed = 4
 
     def update_score(self):
+        '''Updates the score and initializes frightened state if power pellet is consumed'''
         pacman_coord = self.pacman.col_pixel+8, self.pacman.row_pixel+8
 
         if pacman_coord in self.pellets_group.pellets_coord:
@@ -384,6 +399,7 @@ class Display():
         self.score_val["text"] = str(self.game.score)
 
     def inputs(self, event):
+        '''Checks for inputs from player and calls the necessary functions'''
         if event.keysym in self.pacman.keys:
             key = self.pacman.keys[event.keysym]
             if self.pacman.position in self.nodes_group.nodes or self.pacman.directions[key] == self.pacman.direction*-1:
@@ -401,7 +417,7 @@ class Display():
             if self.game.paused != True:
                 self.boss_key_screen.destroy()
                 self.update_screen()
-                self.counter()
+                self.timer()
 
             else:
                 self.boss_key_screen = Canvas(self.root, width=450, height=576)
@@ -409,10 +425,12 @@ class Display():
                 self.boss_key_screen.create_image(0, 0, image=self.boss_key_pic, anchor="nw")
 
     def check_game_status(self):
+        '''Checks the status of the game after every update'''
         for ghost in self.ghosts_group.ghosts:
 
             if ghost.row_pixel == self.pacman.row_pixel and ghost.col_pixel == self.pacman.col_pixel:
-                if self.ghosts_group.state != "FRIGHTENED":
+
+                if self.ghosts_group.state != "FRIGHTENED" or ghost.new_spawned:
                     self.pacman.lives -= 1
                     self.pacman.alive = False
     
@@ -429,10 +447,12 @@ class Display():
                         self.game.spawn()
                         self.update_screen()
 
-                    self.timeout()
+                        self.timeout()
 
                     if self.pacman.lives == 0:
                         self.game.over = True
+                        self.game_over_label = Label(self.canvas_bg, text="GAME OVER!", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
+                        self.game_over_label.place(x=11*16-10, y=17*16-5)
                         f = open("GameSave.txt", "w")
                         f.close()
 
@@ -443,7 +463,8 @@ class Display():
                     ghost.died = True
 
             elif abs(ghost.row_pixel-self.pacman.row_pixel)<5 and abs(ghost.col_pixel-self.pacman.col_pixel)<5 and ghost.direction == (self.pacman.direction * -1):
-                if self.ghosts_group.state != "FRIGHTENED":
+
+                if self.ghosts_group.state != "FRIGHTENED" or ghost.new_spawned:
                     self.pacman.lives -= 1
                     self.pacman.alive = False
 
@@ -457,7 +478,7 @@ class Display():
 
                         self.timeout_period = 3
                         self.timeout_label = Label(self.canvas_bg, text="", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
-                        self.timeout_label.place(x=13*16-8, y=17*16-5)
+                        self.timeout_label.place(x=13*16-10, y=17*16-5)
                         self.game.spawn()
                         self.update_screen()
 
@@ -486,7 +507,7 @@ class Display():
             self.menu.save_high_score()
 
     def timeout(self):
-
+        '''Creates a timout period when a new game is started or pacman loses a life'''
         if self.timeout_period == -1:
             self.pacman.alive = True
             self.pacman.stopped = False
@@ -494,7 +515,7 @@ class Display():
             self.timeout_label.destroy()
             self.ghosts_group.state = "SCATTER"
             self.update_screen()
-            self.counter()
+            self.timer()
 
         elif self.timeout_period == 0:
             self.timeout_label["text"] = "READY!"
@@ -514,4 +535,4 @@ class Display():
         self.root.after(400, self.you_won)
 
 if __name__ == "__main__":
-    dfisplay = Display(450, 576)
+    display = Display(450, 576)
