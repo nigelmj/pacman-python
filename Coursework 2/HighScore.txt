@@ -1,5 +1,5 @@
 LOL: 4160
+Nigel: 3820
+Nigel: 3620
 LOL: 3290
-Foo: 1910
-Nigel: 1500
-Nigel: 1440
+LOL: 3020

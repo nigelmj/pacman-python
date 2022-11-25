@@ -2,10 +2,11 @@ from tkinter import *
 from pacman import *
 
 class Menu():
-    def __init__(self, root, game, pacman, start_game, resume_game):
+    def __init__(self, root, game, pacman, ghosts_group, start_game, resume_game):
+        self.root = root
         self.game = game
         self.pacman = pacman
-        self.root = root
+        self.ghosts_group = ghosts_group
         self.pellets_group = self.game.pellets_group
         self.start_game = start_game
         self.resume_game = resume_game
@@ -124,19 +125,21 @@ class Menu():
             self.pellets_group.pellets = {}
             self.pellets_group.power_pellets = {}
 
-            for pellet in temp_pellets:
-                pellet = pellet[1:-1].split(',')
+            if temp_pellets != ['']:
+                for pellet in temp_pellets:
+                    pellet = pellet[1:-1].split(',')
 
-                row = int(pellet[0])
-                col = int(pellet[1])
-                self.pellets_group.pellets[(row, col)] = Pellet(row, col)
+                    row = int(pellet[0])
+                    col = int(pellet[1])
+                    self.pellets_group.pellets[(row, col)] = Pellet(row, col)
 
-            for power_pellet in temp_power_pellets:
-                power_pellet = power_pellet[1:-1].split(',')
+            if temp_power_pellets != ['']:
+                for power_pellet in temp_power_pellets:
+                    power_pellet = power_pellet[1:-1].split(',')
 
-                row = int(power_pellet[0])
-                col = int(power_pellet[1])
-                self.pellets_group.power_pellets[(row, col)] = PowerPellet(row, col)
+                    row = int(power_pellet[0])
+                    col = int(power_pellet[1])
+                    self.pellets_group.power_pellets[(row, col)] = PowerPellet(row, col)
 
             self.start_game()
 
@@ -145,14 +148,47 @@ class Menu():
         self.codes_frame.place(x=100, y=100, width=250, height=300)
 
         self.code_entry = Entry(self.codes_frame, bg="white", fg="black", font=("Menlo", 14), justify=CENTER)
-        self.code_entry.place(x=25, y=20, height=35, width=200)
+        self.code_entry.place(x=25, y=40, height=35, width=200)
+        self.code_entry.focus_set()
 
         submit_button = Button(self.codes_frame, text="Submit Code", command=self.submit_code, font=("Menlo", 13))
-        submit_button.place(x=60, y=70, height=40, width=130)
+        submit_button.place(x=60, y=100, height=40, width=130)
+
+        self.code_info = Label(self.codes_frame, text="", font=("Menlo", 12))
+        self.code_info.place(x=30, y=150, width=180, height=40)
+
+        back_button = Button(self.codes_frame, text="Back", command=self.codes_frame.destroy, font=("Menlo", 15))
+        back_button.place(x=90, y=200, height=40, width=75)
 
     def submit_code(self):
-        
-        pass
+        code = self.code_entry.get().strip()
+        if code in self.game.codes:
+
+            if self.game.codes[code] == True:
+                self.code_info["text"] = "Code entered already"
+
+            else:
+                if code == "MORELIVES":
+                    self.code_info["text"] = "Added 2 more lives"
+                    self.pacman.lives += 2
+
+                elif code == "SCARYPACMAN":
+                    self.code_info["text"] = "Ghosts stay frightened \nfor 15s"
+                    self.ghosts_group.time["FRIGHTENED"] = 15
+
+                elif code == "PELLETMASTER":
+                    self.code_info["text"] = "Pacman earns 2x points\nfrom pellets"
+                    self.pellets_group.points["Pellet"] = 20
+                    self.pellets_group.points["PowerPellet"] = 100
+
+                elif code == "EASYMODE":
+                    self.code_info["text"] = "Ghosts' speeds have been\nreduced by half"
+                    self.ghosts_group.speed = 2
+
+                self.game.codes[code] = True
+        else:
+            text = "Invalid Code"
+            self.code_info["text"] = text
 
     def show_settings(self):
         self.settings_frame = LabelFrame(self.root, bd=0)
@@ -161,42 +197,49 @@ class Menu():
         self.name_entry = Entry(self.settings_frame, bg="white", fg="black", font=("Menlo", 14), justify=CENTER)
         self.name_entry.place(x=50, y=20, height=35, width=150)
         self.name_entry.insert(0, self.game.player)
+        self.name_entry.focus_set()
 
         up_label = Label(self.settings_frame, text="Move Up: ", font=("Menlo", 11), anchor="w")
-        up_label.place(x=40, y=85, height=20, width=100)
-        self.up_val = Label(self.settings_frame, text=self.pacman.key_up, font=("Menlo", 11), bg="white")
+        up_label.place(x=40, y=70, height=20, width=100)
+        self.up_val = Label(self.settings_frame, text=self.pacman.key_up, font=("Menlo", 11), bg="white", fg="black")
         self.up_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Up"))
-        self.up_val.place(x=150, y=85, height=20, width=50)
+        self.up_val.place(x=150, y=70, height=20, width=50)
 
         left_label = Label(self.settings_frame, text="Move Left: ", font=("Menlo", 11), anchor="w")
-        left_label.place(x=40, y=115, height=20, width=100)
-        self.left_val = Label(self.settings_frame, text=self.pacman.key_left, font=("Menlo", 11), bg="white")
+        left_label.place(x=40, y=100, height=20, width=100)
+        self.left_val = Label(self.settings_frame, text=self.pacman.key_left, font=("Menlo", 11), bg="white", fg="black")
         self.left_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Left"))
-        self.left_val.place(x=150, y=115, height=20, width=50)
+        self.left_val.place(x=150, y=100, height=20, width=50)
 
         down_label = Label(self.settings_frame, text="Move Down: ", font=("Menlo", 11), anchor="w")
-        down_label.place(x=40, y=145, height=20, width=100)
-        self.down_val = Label(self.settings_frame, text=self.pacman.key_down, font=("Menlo", 11), bg="white")
+        down_label.place(x=40, y=130, height=20, width=100)
+        self.down_val = Label(self.settings_frame, text=self.pacman.key_down, font=("Menlo", 11), bg="white", fg="black")
         self.down_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Down"))
-        self.down_val.place(x=150, y=145, height=20, width=50)
+        self.down_val.place(x=150, y=130, height=20, width=50)
 
         right_label = Label(self.settings_frame, text="Move Right: ", font=("Menlo", 11), anchor="w")
-        right_label.place(x=40, y=175, height=20, width=100)
-        self.right_val = Label(self.settings_frame, text=self.pacman.key_right, font=("Menlo", 11), bg="white")
+        right_label.place(x=40, y=160, height=20, width=100)
+        self.right_val = Label(self.settings_frame, text=self.pacman.key_right, font=("Menlo", 11), bg="white", fg="black")
         self.right_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Right"))
-        self.right_val.place(x=150, y=175, height=20, width=50)
+        self.right_val.place(x=150, y=160, height=20, width=50)
 
         pause_label = Label(self.settings_frame, text="Pause Game: ", font=("Menlo", 11), anchor="w")
-        pause_label.place(x=40, y=205, height=20, width=105)
-        self.pause_val = Label(self.settings_frame, text=self.pacman.key_pause, font=("Menlo", 11), bg="white")
+        pause_label.place(x=40, y=190, height=20, width=105)
+        self.pause_val = Label(self.settings_frame, text=self.pacman.key_pause, font=("Menlo", 11), bg="white", fg="black")
         self.pause_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Pause"))
-        self.pause_val.place(x=150, y=205, height=20, width=50)
+        self.pause_val.place(x=150, y=190, height=20, width=50)
 
-        save_button = Button(self.settings_frame, text="Save", command=self.save_settings, font=("Menlo", 15))
-        save_button.place(x=40, y=240, height=40, width=75)
+        boss_key_label = Label(self.settings_frame, text="Boss Key: ", font=("Menlo", 11), anchor="w")
+        boss_key_label.place(x=40, y=220, height=20, width=105)
+        self.boss_key_val = Label(self.settings_frame, text=self.pacman.key_boss, font=("Menlo", 11), bg="white", fg="black")
+        self.boss_key_val.bind("<Button-1>", lambda event: self.select_key_label(event, "Boss_key"))
+        self.boss_key_val.place(x=150, y=220, height=20, width=50)
 
-        back_button = Button(self.settings_frame, text="Back", command=self.settings_frame.destroy, font=("Menlo", 15))
-        back_button.place(x=130, y=240, height=40, width=75)
+        save_button = Button(self.settings_frame, text="Save", command=self.save_settings, font=("Menlo", 13))
+        save_button.place(x=40, y=250, height=30, width=75)
+
+        back_button = Button(self.settings_frame, text="Back", command=self.settings_frame.destroy, font=("Menlo", 13))
+        back_button.place(x=130, y=250, height=30, width=75)
 
     def select_key_label(self, event, key):
 
@@ -205,6 +248,7 @@ class Menu():
         self.down_val["bg"] = "white"
         self.right_val["bg"] = "white"
         self.pause_val["bg"] = "white"
+        self.boss_key_val["bg"] = "white"
 
         if key == "Up":
             self.up_val.focus_set()
@@ -226,6 +270,10 @@ class Menu():
             self.pause_val.focus_set()
             self.pause_val["bg"] = "lightblue"
             self.pause_val.bind("<Key>", lambda event: self.set_key(event, key))
+        elif key == "Boss_key":
+            self.boss_key_val.focus_set()
+            self.boss_key_val["bg"] = "lightblue"
+            self.boss_key_val.bind("<Key>", lambda event: self.set_key(event, key))
 
     def set_key(self, event, key):
 
@@ -239,6 +287,8 @@ class Menu():
             self.right_val["text"] = event.keysym
         elif key == "Pause":
             self.pause_val["text"] = event.keysym
+        elif key == "Boss_key":
+            self.boss_key_val["text"] = event.keysym
 
     def save_settings(self):
         if self.game.player != self.name_entry.get().strip():
@@ -251,6 +301,7 @@ class Menu():
         self.pacman.key_down = self.down_val["text"]
         self.pacman.key_right = self.right_val["text"]
         self.pacman.key_pause = self.pause_val["text"]
+        self.pacman.key_boss = self.boss_key_val["text"]
 
         self.settings_frame.destroy()
         self.menu_frame.destroy()
@@ -263,7 +314,8 @@ class Menu():
                 self.pacman.key_left,
                 self.pacman.key_down,
                 self.pacman.key_right,
-                self.pacman.key_pause
+                self.pacman.key_pause,
+                self.pacman.key_boss
             ]
 
             text = "\n".join(text)
@@ -273,4 +325,4 @@ class Menu():
         with open("Settings.txt") as f:
             data = f.read().split("\n")
 
-            return data[0].strip(), data[1].strip(), data[2].strip(), data[3].strip(), data[4].strip(), data[5].strip()
+            return data[0].strip(), data[1].strip(), data[2].strip(), data[3].strip(), data[4].strip(), data[5].strip(), data[6].strip()

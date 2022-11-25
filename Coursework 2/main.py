@@ -1,3 +1,6 @@
+'''
+Resolution: 1440x900
+'''
 from tkinter import *
 import PIL
 from PIL import ImageTk
@@ -17,6 +20,7 @@ class Display():
         self.game.start = False
         self.game.paused = True
         self.game.over = False
+        self.game.won = False
 
         self.pacman = self.game.pacman
         self.ghosts_group = self.game.ghosts_group
@@ -31,24 +35,28 @@ class Display():
         self.pellets_canvas = {}
 
         image = PIL.Image.open("Images/Map.jpg")
-        self.bg = image.resize((448,496))
+        self.bg = image.resize((448, 496))
         self.bg = ImageTk.PhotoImage(self.bg)
 
         self.canvas_bg = Canvas(self.root, width=448, height=496)
         self.canvas_bg.place(x=-1, y=-1)
         self.canvas_bg.create_image(0, 0, image=self.bg, anchor="nw")
 
-        self.menu = Menu(self.root, self.game, self.pacman, self.start_game, self.resume_game)
+        image = image = PIL.Image.open("Images/Boss_key.jpeg")
+        self.boss_key_pic = image.resize((450, 576))
+        self.boss_key_pic = ImageTk.PhotoImage(self.boss_key_pic)
+
+        self.menu = Menu(self.root, self.game, self.pacman, self.ghosts_group, self.start_game, self.resume_game)
         self.menu.show_menu()
 
-        self.game.player, self.pacman.key_up, self.pacman.key_left, self.pacman.key_down, self.pacman.key_right, self.pacman.key_pause = self.menu.load_settings()
+        self.game.player, self.pacman.key_up, self.pacman.key_left, self.pacman.key_down, self.pacman.key_right, self.pacman.key_pause, self.pacman.key_boss = self.menu.load_settings()
 
         self.t = 1
         self.time = 0
         self.change = False
 
         self.root.mainloop()
-        if self.pacman.lives > 0 and self.game.score > 0: self.menu.save_game()
+        if self.pacman.lives > 0 and self.game.score > 0 and not self.game.won: self.menu.save_game()
 
     def start_game(self):
 
@@ -81,8 +89,12 @@ class Display():
             self.time = 0
             self.change = False
 
-        self.game.start = True
 
+        self.game.start = True
+        self.game.over = False
+        self.game.won = False
+
+        self.game.player, self.pacman.key_up, self.pacman.key_left, self.pacman.key_down, self.pacman.key_right, self.pacman.key_pause, self.pacman.key_boss = self.menu.load_settings()
         self.pacman.keys = {
             self.pacman.key_up : 'Up', 
             self.pacman.key_left : 'Left', 
@@ -91,14 +103,21 @@ class Display():
         }
 
         self.root.bind("<Key>", self.inputs)
-        self.game.paused = False
-        self.counter()
+        self.game.paused = True
+
         self.display()
+
+        self.timeout_period = 3
+        self.timeout_label = Label(self.canvas_bg, text="", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
+        self.timeout_label.place(x=13*16-8, y=17*16-5)
+        self.game.spawn()
         self.update_screen()
-        self.update_ghost_state("SCATTER")
+        self.timeout()
     
     def resume_game(self):
         self.menu.menu_frame.destroy()
+        self.lives_frame.destroy()
+        self.display_lives()
 
         self.pacman.keys = {
             self.pacman.key_up : 'Up', 
@@ -121,7 +140,7 @@ class Display():
         for indrow, row in enumerate(self.game.grid):
             for indcol, col in enumerate(row):
                 
-                if self.game.grid[indrow][indcol] in ['+', 'n', 'P']:
+                if self.game.grid[indrow][indcol] in ['+', 'n', 'P', 'G']:
                     self.nodes_group.nodes_coord.append((indcol*16+8, indrow*16+8))
 
                 if (indrow, indcol) in self.pellets_group.pellets:
@@ -170,7 +189,7 @@ class Display():
             ghost.right = ImageTk.PhotoImage(ghost.right)
             ghost.pictures[2] = ghost.right
 
-            image = PIL.Image.open("Images/ghost_fright.png")
+            image = PIL.Image.open("Images/Ghost_frightblue.png")
             ghost.fright_picture = image.resize((16, 16))
             ghost.fright_picture = ImageTk.PhotoImage(ghost.fright_picture)
 
@@ -182,6 +201,18 @@ class Display():
         self.score_label.place(x=10, y=31*16, width=80)
         self.score_val = Label(self.root, text=str(self.game.score), font=("Menlo", 20))
         self.score_val.place(x=80, y=31*16)
+
+        self.display_lives()
+
+    def display_lives(self):
+
+        self.lives_frame = LabelFrame(self.root, bd=0)
+        self.lives_frame.place(x=150, y=31*16, width=300, height=50)
+        for life in range(self.pacman.lives):
+
+            self.life_circle = Canvas(self.lives_frame, highlightthickness=0)
+            self.life_circle.place(x=260-(30*life), y=5, height=21, width=21)
+            self.life_arc = self.life_circle.create_arc(0, 0, 20, 20, start = 225, extent = 270, fill="yellow")
 
     def update_screen(self):
         
@@ -243,36 +274,49 @@ class Display():
             self.pacman.row_pixel, self.pacman.col_pixel = row_pixel, col_pixel
             self.pacman.position = self.pacman.get_position(row_pixel, col_pixel)
             self.update_score()
-            self.check_game_status()
+
+        elif self.pacman.alive == False:
+            self.pacman.circle.itemconfig(self.pacman.arc, start=225)
+            self.pacman.circle.place(x=self.pacman.col_pixel, y=self.pacman.row_pixel)
+
+        self.check_game_status()
 
     def update_ghosts(self):
 
         for ghost in self.ghosts_group.ghosts:
-            if ghost.position in self.nodes_group.nodes:
-                
-                if (ghost.col_pixel+8, ghost.row_pixel+8) in self.nodes_group.nodes_coord:
-                    ghost.next_direction_ghost(self.nodes_group, ghost.target)
+            if ghost.paused != True:
+                if ghost.position in self.nodes_group.nodes:
+                    
+                    if (ghost.col_pixel+8, ghost.row_pixel+8) in self.nodes_group.nodes_coord:
+                        ghost.next_direction_ghost(self.nodes_group, ghost.target)
 
-            row_pixel, col_pixel = ghost.row_pixel, ghost.col_pixel
-            direction = ghost.direction
+                row_pixel, col_pixel = ghost.row_pixel, ghost.col_pixel
+                direction = ghost.direction
 
-            if direction == 1: 
-                row_pixel += self.ghosts_group.speed
+                speed = self.ghosts_group.speed
+                if ghost.died == True and not ghost.in_home:
+                    speed = self.ghosts_group.died_speed
+                    if row_pixel%16 != 0 or col_pixel%16 != 0:
+                        row_pixel -= row_pixel%16
+                        col_pixel -= col_pixel%16
 
-            elif direction == -1:
-                row_pixel -= self.ghosts_group.speed
+                if direction == 1: 
+                    row_pixel += speed
 
-            elif direction == 2:
-                col_pixel += self.ghosts_group.speed
+                elif direction == -1:
+                    row_pixel -= speed
 
-                if col_pixel > 28*16:
-                    col_pixel = -16
+                elif direction == 2:
+                    col_pixel += speed
 
-            elif direction == -2:
-                col_pixel -= self.ghosts_group.speed
+                    if col_pixel > 28*16:
+                        col_pixel = -16
 
-                if col_pixel < -16:
-                    col_pixel = 28*16
+                elif direction == -2:
+                    col_pixel -= speed
+
+                    if col_pixel < -16:
+                        col_pixel = 28*16
 
             ghost.image.itemconfig(ghost.container, image = ghost.pictures[direction])
 
@@ -323,13 +367,13 @@ class Display():
         pacman_coord = self.pacman.col_pixel+8, self.pacman.row_pixel+8
 
         if pacman_coord in self.pellets_group.pellets_coord:
-            self.game.score += self.pellets_group.pellets[self.pacman.position].points
+            self.game.score += self.pellets_group.points["Pellet"]
             self.pellets_group.pellets.pop(self.pacman.position)
             self.pellets_group.pellets_coord.remove(pacman_coord)
             self.pellets_canvas[self.pacman.position][0].destroy()
 
         elif pacman_coord in self.pellets_group.power_pellets_coord:
-            self.game.score += self.pellets_group.power_pellets[self.pacman.position].points
+            self.game.score += self.pellets_group.points["PowerPellet"]
             self.pellets_group.power_pellets.pop(self.pacman.position)
             self.pellets_group.power_pellets_coord.remove(pacman_coord)
             self.pellets_canvas[self.pacman.position][0].destroy()
@@ -347,12 +391,22 @@ class Display():
 
         if event.keysym == self.pacman.key_pause:
             self.game.paused = not self.game.paused
-            if self.game.paused != True:
-                self.update_screen() 
-                self.update_ghost_state(self.ghosts_group.state)
-            else:
+            if self.game.paused == True:
                 self.menu.show_menu()
                 self.root.unbind("<Key>")
+
+        if event.keysym == self.pacman.key_boss:
+
+            self.game.paused = not self.game.paused
+            if self.game.paused != True:
+                self.boss_key_screen.destroy()
+                self.update_screen()
+                self.counter()
+
+            else:
+                self.boss_key_screen = Canvas(self.root, width=450, height=576)
+                self.boss_key_screen.place(x=0, y=0)
+                self.boss_key_screen.create_image(0, 0, image=self.boss_key_pic, anchor="nw")
 
     def check_game_status(self):
         for ghost in self.ghosts_group.ghosts:
@@ -360,9 +414,24 @@ class Display():
             if ghost.row_pixel == self.pacman.row_pixel and ghost.col_pixel == self.pacman.col_pixel:
                 if self.ghosts_group.state != "FRIGHTENED":
                     self.pacman.lives -= 1
+                    self.pacman.alive = False
+    
+                    self.lives_frame.destroy()
+                    self.display_lives()
+
+                    self.game.paused = True 
+                    self.time = 0
+
+                    if self.pacman.lives > 0:
+                        self.timeout_period = 3
+                        self.timeout_label = Label(self.canvas_bg, text="", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
+                        self.timeout_label.place(x=13*16-8, y=17*16-5)
+                        self.game.spawn()
+                        self.update_screen()
+
+                    self.timeout()
 
                     if self.pacman.lives == 0:
-                        self.game.paused = True 
                         self.game.over = True
                         f = open("GameSave.txt", "w")
                         f.close()
@@ -371,14 +440,33 @@ class Display():
                 else:
                     self.game.score += 200 * (self.ghost_eaten + 1)
                     self.ghost_eaten += 1
+                    ghost.died = True
 
             elif abs(ghost.row_pixel-self.pacman.row_pixel)<5 and abs(ghost.col_pixel-self.pacman.col_pixel)<5 and ghost.direction == (self.pacman.direction * -1):
                 if self.ghosts_group.state != "FRIGHTENED":
                     self.pacman.lives -= 1
+                    self.pacman.alive = False
+
+                    self.lives_frame.destroy()
+                    self.display_lives()
+
+                    self.game.paused = True 
+                    self.time = 0
+
+                    if self.pacman.lives > 0:
+
+                        self.timeout_period = 3
+                        self.timeout_label = Label(self.canvas_bg, text="", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
+                        self.timeout_label.place(x=13*16-8, y=17*16-5)
+                        self.game.spawn()
+                        self.update_screen()
+
+                        self.timeout()
 
                     if self.pacman.lives == 0:
-                        self.game.paused = True 
                         self.game.over = True
+                        self.game_over_label = Label(self.canvas_bg, text="GAME OVER!", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
+                        self.game_over_label.place(x=11*16-8, y=17*16-5)
                         f = open("GameSave.txt", "w")
                         f.close()
 
@@ -386,11 +474,44 @@ class Display():
                 else:
                     self.game.score += 200 * (self.ghost_eaten + 1)
                     self.ghost_eaten += 1
+                    ghost.died = True
 
         if self.pellets_group.pellets == {} and self.pellets_group.power_pellets == {}:
             self.game.paused = True
             self.game.over = True
+            self.game.won = True
+            self.win_label = Label(self.canvas_bg, text="YOU WON!", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
+            self.win_label.place(x=12*16-8, y=17*16-5)
+            self.you_won()
             self.menu.save_high_score()
+
+    def timeout(self):
+
+        if self.timeout_period == -1:
+            self.pacman.alive = True
+            self.pacman.stopped = False
+            self.game.paused = False
+            self.timeout_label.destroy()
+            self.ghosts_group.state = "SCATTER"
+            self.update_screen()
+            self.counter()
+
+        elif self.timeout_period == 0:
+            self.timeout_label["text"] = "READY!"
+            self.timeout_period -=1
+            self.root.after(1000, self.timeout)
+
+        else:
+            self.timeout_label["text"] = "  "+str(self.timeout_period)
+            self.timeout_period -=1
+            self.root.after(1000, self.timeout)
+
+    def you_won(self):
+        if self.win_label["fg"] == "lightblue":
+            self.win_label["fg"] = "white"
+        else:
+            self.win_label["fg"] = "lightblue"
+        self.root.after(400, self.you_won)
 
 if __name__ == "__main__":
     dfisplay = Display(450, 576)

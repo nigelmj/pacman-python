@@ -1,6 +1,7 @@
-LOL
+Nigel
 Up
 Left
 Down
 Right
-t
+space
+Escape
