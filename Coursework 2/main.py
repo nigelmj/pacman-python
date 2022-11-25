@@ -18,7 +18,7 @@ from menu import *
 
 class Display():
     '''Display class for the main window'''
-    def __init__(self, width, height):
+    def __init__(self, width, height): # initialize the window , and geometry, title
         self.root = Tk()
         self.root.title("Pacman")
         self.width = str(width)
@@ -26,13 +26,13 @@ class Display():
         self.root.geometry(self.width+"x"+self.height)
         self.root.resizable(False, False)
 
-        self.game = Game("map.txt")
+        self.game = Game("map.txt")            # create a game object
         self.game.start = False
         self.game.paused = True
         self.game.over = False
         self.game.won = False
 
-        self.pacman = self.game.pacman
+        self.pacman = self.game.pacman              # get pacman and the ghost group
         self.ghosts_group = self.game.ghosts_group
 
         self.blinky = self.ghosts_group.ghosts[0]
@@ -44,7 +44,7 @@ class Display():
         self.pellets_group = self.game.pellets_group
         self.pellets_canvas = {}
 
-        image = PIL.Image.open("Images/Map.jpg")
+        image = PIL.Image.open("Images/Map.jpg")            # create image for the background
         self.bg = image.resize((448, 496))
         self.bg = ImageTk.PhotoImage(self.bg)
 
@@ -56,28 +56,28 @@ class Display():
         self.boss_key_pic = image.resize((450, 576))
         self.boss_key_pic = ImageTk.PhotoImage(self.boss_key_pic)
 
-        self.menu = Menu(self.root, self.game, self.pacman, self.ghosts_group, self.start_game, self.resume_game)
+        self.menu = Menu(self.root, self.game, self.pacman, self.ghosts_group, self.start_game, self.resume_game)  # create the menu object
         self.menu.show_menu()
 
         self.game.player, self.pacman.key_up, self.pacman.key_left, self.pacman.key_down, self.pacman.key_right, self.pacman.key_pause, self.pacman.key_boss = self.menu.load_settings()
 
-        self.t = 1
+        self.t = 1          # set the time to 0 and player settings
         self.time = 0
         self.change = False
 
         self.root.mainloop()
-        if self.pacman.lives > 0 and self.game.score > 0 and not self.game.won: self.menu.save_game()
+        if self.pacman.lives > 0 and self.game.score > 0 and not self.game.won: self.menu.save_game() # only save if the game is not over yet
 
     def start_game(self):
         '''Starts the games by calling the necessary update and display functions'''
-        self.menu.menu_frame.destroy()
-        if self.game.start:
+        self.menu.menu_frame.destroy()          # destroy and the menu frame and start the game
+        if self.game.start:         
 
             del self.game
             self.canvas_bg.destroy()
             self.score_val.destroy()
 
-            self.game = Game("map.txt")
+            self.game = Game("map.txt")         # delete the previous game and start new if players starts new in between
 
             self.pacman = self.game.pacman
             self.ghosts_group = self.game.ghosts_group
@@ -100,7 +100,7 @@ class Display():
             self.change = False
 
 
-        self.game.start = True
+        self.game.start = True          # set variables again as well as player controls
         self.game.over = False
         self.game.won = False
 
@@ -112,12 +112,12 @@ class Display():
             self.pacman.key_right : 'Right'
         }
 
-        self.root.bind("<Key>", self.inputs)
-        self.game.paused = True
+        self.root.bind("<Key>", self.inputs)        # bind the keys
+        self.game.paused = True 
 
         self.display()
 
-        self.timeout_period = 3
+        self.timeout_period = 3         # time out variable to let the player get ready
         self.timeout_label = Label(self.canvas_bg, text="", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
         self.timeout_label.place(x=13*16-10, y=17*16-5)
         self.game.spawn()
@@ -127,7 +127,7 @@ class Display():
     def resume_game(self):
         '''Resumes the game after the player paused it'''
         self.menu.menu_frame.destroy()
-        self.lives_frame.destroy()
+        self.lives_frame.destroy()              # destroys the menu and unpauses the game as well as sets controls if there are changes and binds the keys to inputs
         self.display_lives()
 
         self.pacman.keys = {
@@ -144,20 +144,20 @@ class Display():
 
     def timer(self):
         '''Creates a timer for changing ghost states'''
-        if self.game.paused != True:
+        if self.game.paused != True:                # continue timer only if game is not paused
             self.time += 1
             self.root.after(1000, self.timer)
         
     def display(self):
         '''Displays pellets, creates nodes_coords, images for ghosts and arc for pacman'''
         for indrow, row in enumerate(self.game.grid):
-            for indcol, col in enumerate(row):
+            for indcol, col in enumerate(row):                  # display the pellets
                 
                 if self.game.grid[indrow][indcol] in ['+', 'n', 'P', 'G']:
-                    self.nodes_group.nodes_coord.append((indcol*16+8, indrow*16+8))
+                    self.nodes_group.nodes_coord.append((indcol*16+8, indrow*16+8))         # add coordinates to nodes group
 
                 if (indrow, indcol) in self.pellets_group.pellets:
-                    ele = Canvas(self.canvas_bg, bg="black", highlightthickness=0)
+                    ele = Canvas(self.canvas_bg, bg="black", highlightthickness=0)              # create the pellets and the power pellets
                     ele.place(x=indcol*16, y=indrow*16, height=15, width=15)
                     oval = ele.create_oval(5, 5, 8, 8, fill="white")
 
@@ -174,11 +174,11 @@ class Display():
 
         row_pac, col_pac = self.pacman.position
 
-        self.pacman.circle = Canvas(self.canvas_bg, bg="black", highlightthickness=0)
+        self.pacman.circle = Canvas(self.canvas_bg, bg="black", highlightthickness=0)               # create the pacman canvas arc
         self.pacman.circle.place(x=col_pac*16, y=row_pac*16, height=16, width=16)
         self.pacman.arc = self.pacman.circle.create_arc(0, 0, 15, 15, start = 225, extent = 270, fill="yellow")
         
-        for ghost in self.ghosts_group.ghosts:
+        for ghost in self.ghosts_group.ghosts:              # for each ghost, load its various images and set the canvas
 
             row, col = ghost.position
 
@@ -220,7 +220,7 @@ class Display():
     def display_lives(self):
         '''Displays the number of lives left'''
 
-        self.lives_frame = LabelFrame(self.root, bd=0)
+        self.lives_frame = LabelFrame(self.root, bd=0)              # displays the lives remaining for pacman
         self.lives_frame.place(x=150, y=31*16, width=300, height=50)
         for life in range(self.pacman.lives):
 
@@ -231,7 +231,7 @@ class Display():
     def update_screen(self):
         '''Updates the screen every 70ms'''
         self.update_pellets(self.t)
-        self.update_pacman(self.pacman.direction)
+        self.update_pacman(self.pacman.direction)           #updates the screen
         self.update_ghosts()
         self.update_ghost_state(self.ghosts_group.state)
 
@@ -239,7 +239,7 @@ class Display():
             self.root.after(70, self.update_screen)
 
     def update_pellets(self, t):
-        '''Creates the blinking effect of the power pellets'''
+        '''Creates the blinking effect of the power pellets'''          # updates the blinking of the pellets, 
         if t == 2:
             for coord in self.pellets_group.power_pellets:
 
@@ -248,7 +248,7 @@ class Display():
                 ele = self.pellets_canvas[(coord)][0]
                 oval = self.pellets_canvas[(coord)][1]
 
-                if power.visible:
+                if power.visible:                                   # if visible, blink, else stay open
                     ele.itemconfig(oval, fill="white")
                 else:
                     ele.itemconfig(oval, fill="black")
@@ -259,7 +259,7 @@ class Display():
 
     def update_pacman(self, direction):
         '''Updates the position of pacman'''
-        self.pacman.next_direction(direction, self.nodes_group)
+        self.pacman.next_direction(direction, self.nodes_group)             # update position of pacman only if he is not stopped
         if self.pacman.stopped != True:
             row_pixel, col_pixel = self.pacman.row_pixel, self.pacman.col_pixel
 
@@ -274,18 +274,18 @@ class Display():
             elif direction == 2:
                 col_pixel += self.pacman.speed
 
-                if col_pixel > 28*16:
+                if col_pixel > 28*16:                   # moves pacman back to the very left of the screen
                     col_pixel = -16
                 self.pacman.circle.itemconfig(self.pacman.arc, start=45)
 
             elif direction == -2:
                 col_pixel -= self.pacman.speed
 
-                if col_pixel < -16:
+                if col_pixel < -16:                 # moves pacman back to the very left of the screen
                     col_pixel = 28*16
                 self.pacman.circle.itemconfig(self.pacman.arc, start=225)
 
-            self.pacman.circle.place(x=col_pixel, y=row_pixel)
+            self.pacman.circle.place(x=col_pixel, y=row_pixel)              # set the circle and the arc according to the position and direction and update the score
             self.pacman.row_pixel, self.pacman.col_pixel = row_pixel, col_pixel
             self.pacman.position = self.pacman.get_position(row_pixel, col_pixel)
             self.update_score()
@@ -299,7 +299,7 @@ class Display():
     def update_ghosts(self):
         '''Updates the position of the ghosts'''
         for ghost in self.ghosts_group.ghosts:
-            if ghost.position in self.nodes_group.nodes:
+            if ghost.position in self.nodes_group.nodes:            # updates the options of the ghosts similar to pacman
                 
                 if (ghost.col_pixel+8, ghost.row_pixel+8) in self.nodes_group.nodes_coord:
                     ghost.next_direction_ghost(self.nodes_group, ghost.target)
@@ -310,7 +310,7 @@ class Display():
             speed = self.ghosts_group.speed
             if ghost.died == True and not ghost.in_home:
                 speed = self.ghosts_group.died_speed
-                if row_pixel%16 != 0 or col_pixel%16 != 0:
+                if row_pixel%16 != 0 or col_pixel%16 != 0:          # if the ghost is dead, change speed to 16, and position it correctly so it can detect the nodes
                     row_pixel -= row_pixel%16
                     col_pixel -= col_pixel%16
 
@@ -332,7 +332,7 @@ class Display():
                 if col_pixel < -16:
                     col_pixel = 28*16
 
-            ghost.image.itemconfig(ghost.container, image = ghost.pictures[direction])
+            ghost.image.itemconfig(ghost.container, image = ghost.pictures[direction])          # set image according to the ghost and its direction
 
             ghost.image.place(x=col_pixel, y=row_pixel)
             ghost.row_pixel, ghost.col_pixel = row_pixel, col_pixel
@@ -342,12 +342,12 @@ class Display():
         '''Updates the ghost state by checking the time left on the timer'''
         if state != "FRIGHTENED":
             if state == "SCATTER":
-                self.ghosts_group.scatter(self.ghosts_group.ghosts, self.change)
+                self.ghosts_group.scatter(self.ghosts_group.ghosts, self.change)            # update the ghost state according to the timer
                 new_state = "CHASE"
 
             elif state == "CHASE":
                 self.ghosts_group.chase(self.ghosts_group.ghosts, self.pacman.position, self.pacman.direction, self.blinky.position, self.change)
-                new_state = "SCATTER"
+                new_state = "SCATTER"           # call opposite functions after timer reaches end
 
             self.prev_state = state
             self.ghosts_group.state = state
@@ -358,20 +358,20 @@ class Display():
                 self.time = 0
                 self.change = True
 
-        else:
+        else:           # if state is frightened
 
-            if self.change == True:
+            if self.change == True:         # set variables for initial second
                 self.prev_time = self.time 
                 self.time = 0
                 self.ghost_eaten = 0
                 self.ghosts_group.state = state
                 self.pacman.speed = 8
 
-            self.ghosts_group.frightened(self.ghosts_group.ghosts, self.nodes_group, self.change)
+            self.ghosts_group.frightened(self.ghosts_group.ghosts, self.nodes_group, self.change)       # call the function
 
             self.change = False
 
-            if self.time == self.ghosts_group.time[state]:
+            if self.time == self.ghosts_group.time[state]:          # at the end of function, go back to prevous state with previous time
                 self.ghosts_group.state = self.prev_state
                 self.time = self.prev_time
                 self.change = True
@@ -381,7 +381,7 @@ class Display():
         '''Updates the score and initializes frightened state if power pellet is consumed'''
         pacman_coord = self.pacman.col_pixel+8, self.pacman.row_pixel+8
 
-        if pacman_coord in self.pellets_group.pellets_coord:
+        if pacman_coord in self.pellets_group.pellets_coord:            # updates the scores, pellets give you 10 points, power pellets give you 50
             self.game.score += self.pellets_group.points["Pellet"]
             self.pellets_group.pellets.pop(self.pacman.position)
             self.pellets_group.pellets_coord.remove(pacman_coord)
@@ -394,19 +394,19 @@ class Display():
             self.pellets_canvas[self.pacman.position][0].destroy()
 
             self.change = True
-            self.update_ghost_state("FRIGHTENED")
+            self.update_ghost_state("FRIGHTENED")           # set state to frightened
 
         self.score_val["text"] = str(self.game.score)
 
     def inputs(self, event):
         '''Checks for inputs from player and calls the necessary functions'''
-        if event.keysym in self.pacman.keys:
+        if event.keysym in self.pacman.keys:                # check inputs from the player
             key = self.pacman.keys[event.keysym]
             if self.pacman.position in self.nodes_group.nodes or self.pacman.directions[key] == self.pacman.direction*-1:
-                self.pacman.next_direction(self.pacman.directions[key], self.nodes_group)
+                self.pacman.next_direction(self.pacman.directions[key], self.nodes_group) # checks the inputs for moving pacman, only works if pacman in a node or direction is reversed
 
         if event.keysym == self.pacman.key_pause:
-            self.game.paused = not self.game.paused
+            self.game.paused = not self.game.paused             # pause the game and bring the menu as well as unbind the key to prevent errors
             if self.game.paused == True:
                 self.menu.show_menu()
                 self.root.unbind("<Key>")
@@ -414,13 +414,13 @@ class Display():
         if event.keysym == self.pacman.key_boss:
 
             self.game.paused = not self.game.paused
-            if self.game.paused != True:
-                self.boss_key_screen.destroy()
-                self.update_screen()
+            if self.game.paused != True:                        # quickly bring up fake image for productivity, 
+                self.boss_key_screen.destroy()                  # I don't have to, I'm quite good with tab switcher 
+                self.update_screen()                            #       *insert sunglasses emoji*
                 self.timer()
 
             else:
-                self.boss_key_screen = Canvas(self.root, width=450, height=576)
+                self.boss_key_screen = Canvas(self.root, width=450, height=576)         # otherwise remove the screen, (key works both ways)
                 self.boss_key_screen.place(x=0, y=0)
                 self.boss_key_screen.create_image(0, 0, image=self.boss_key_pic, anchor="nw")
 
@@ -428,11 +428,11 @@ class Display():
         '''Checks the status of the game after every update'''
         for ghost in self.ghosts_group.ghosts:
 
-            if ghost.row_pixel == self.pacman.row_pixel and ghost.col_pixel == self.pacman.col_pixel:
+            if ghost.row_pixel == self.pacman.row_pixel and ghost.col_pixel == self.pacman.col_pixel:       # check if ghost and pacman are in same coordinate
 
-                if self.ghosts_group.state != "FRIGHTENED" or ghost.new_spawned:
-                    self.pacman.lives -= 1
-                    self.pacman.alive = False
+                if self.ghosts_group.state != "FRIGHTENED" or ghost.new_spawned:            # check if state is frightened or new spawn
+                    self.pacman.lives -= 1 
+                    self.pacman.alive = False           # subtract 1 from pacman lives, pause the game 
     
                     self.lives_frame.destroy()
                     self.display_lives()
@@ -440,7 +440,7 @@ class Display():
                     self.game.paused = True 
                     self.time = 0
 
-                    if self.pacman.lives > 0:
+                    if self.pacman.lives > 0:       # if there are more lives, call the timout function to restart game
                         self.timeout_period = 3
                         self.timeout_label = Label(self.canvas_bg, text="", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
                         self.timeout_label.place(x=13*16-8, y=17*16-5)
@@ -449,22 +449,22 @@ class Display():
 
                         self.timeout()
 
-                    if self.pacman.lives == 0:
+                    if self.pacman.lives == 0:      # if there are no lives, end game with game over text
                         self.game.over = True
                         self.game_over_label = Label(self.canvas_bg, text="GAME OVER!", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
                         self.game_over_label.place(x=11*16-10, y=17*16-5)
-                        f = open("GameSave.txt", "w")
+                        f = open("GameSave.txt", "w")       # open the save file and empty it
                         f.close()
 
                     return
                 else:
-                    self.game.score += 200 * (self.ghost_eaten + 1)
+                    self.game.score += 200 * (self.ghost_eaten + 1)         # if state is frightened, add 200 points to the pacman score (multiplies by how many ghosts he eats)
                     self.ghost_eaten += 1
                     ghost.died = True
 
             elif abs(ghost.row_pixel-self.pacman.row_pixel)<5 and abs(ghost.col_pixel-self.pacman.col_pixel)<5 and ghost.direction == (self.pacman.direction * -1):
 
-                if self.ghosts_group.state != "FRIGHTENED" or ghost.new_spawned:
+                if self.ghosts_group.state != "FRIGHTENED" or ghost.new_spawned:    # similar condition to above, only checks for rare cases when pacman and ghost intersect and don't match coordinates
                     self.pacman.lives -= 1
                     self.pacman.alive = False
 
@@ -497,38 +497,38 @@ class Display():
                     self.ghost_eaten += 1
                     ghost.died = True
 
-        if self.pellets_group.pellets == {} and self.pellets_group.power_pellets == {}:
+        if self.pellets_group.pellets == {} and self.pellets_group.power_pellets == {}:     # if all pellets have been eaten, pacman wins
             self.game.paused = True
-            self.game.over = True
+            self.game.over = True       # call the you won function to show the text 
             self.game.won = True
             self.win_label = Label(self.canvas_bg, text="YOU WON!", font=("Menlo", 16, "bold"), fg="lightblue", bg="black")
             self.win_label.place(x=12*16-8, y=17*16-5)
-            self.you_won()
-            self.menu.save_high_score()
+            self.you_won()              # YAYYYYY YOU WONNNNN!!!
+            self.menu.save_high_score()     # save the high score 
 
     def timeout(self):
         '''Creates a timout period when a new game is started or pacman loses a life'''
         if self.timeout_period == -1:
-            self.pacman.alive = True
+            self.pacman.alive = True            # sets everything to initial conditions to begin playing game
             self.pacman.stopped = False
             self.game.paused = False
             self.timeout_label.destroy()
             self.ghosts_group.state = "SCATTER"
-            self.update_screen()
+            self.update_screen()                # updates screen and calls timer
             self.timer()
 
         elif self.timeout_period == 0:
-            self.timeout_label["text"] = "READY!"
+            self.timeout_label["text"] = "READY!"       # text says ready
             self.timeout_period -=1
             self.root.after(1000, self.timeout)
 
         else:
             self.timeout_label["text"] = "  "+str(self.timeout_period)
-            self.timeout_period -=1
+            self.timeout_period -=1         # text says the time remaining
             self.root.after(1000, self.timeout)
 
     def you_won(self):
-        if self.win_label["fg"] == "lightblue":
+        if self.win_label["fg"] == "lightblue":             # keep changing the colour of the text after wining 
             self.win_label["fg"] = "white"
         else:
             self.win_label["fg"] = "lightblue"
