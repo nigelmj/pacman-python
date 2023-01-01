@@ -490,8 +490,8 @@ class Display():
 
     def inputs(self, event):
         '''Checks for inputs from player and calls the necessary functions'''
-        if event.keysym in self.pacman.keys:                # check inputs from the player
-            key = self.pacman.keys[event.keysym]
+        if event.keysym.lower() in self.pacman.keys:                # check inputs from the player
+            key = self.pacman.keys[event.keysym.lower()]
             if self.pacman.position in self.nodes_group.nodes or self.pacman.directions[
                     key] == self.pacman.direction * -1:
                 # checks the inputs for moving pacman, only works if pacman in
@@ -499,7 +499,7 @@ class Display():
                 self.pacman.next_direction(
                     self.pacman.directions[key], self.nodes_group)
 
-        if event.keysym == self.pacman.key_pause:
+        if event.keysym.lower() == self.pacman.key_pause:
             # pause the game and bring the menu as well as unbind the key to
             # prevent errors
             self.game.paused = not self.game.paused
@@ -507,7 +507,7 @@ class Display():
                 self.menu.show_menu()
                 self.root.unbind("<Key>")
 
-        if event.keysym == self.pacman.key_boss:
+        if event.keysym.lower() == self.pacman.key_boss:
 
             self.game.paused = not self.game.paused
             if self.game.paused != True:                        # quickly bring up fake image for productivity,
@@ -624,6 +624,8 @@ class Display():
             self.win_label.place(x=12 * 16 - 8, y=17 * 16 - 5)
             self.you_won()              # YAYYYYY YOU WONNNNN!!!
             self.menu.save_high_score()     # save the high score
+            f = open("GameSave.txt", "w")
+            f.close()
 
     def timeout(self):
         '''Creates a timout period when a new game is started or pacman loses a life'''

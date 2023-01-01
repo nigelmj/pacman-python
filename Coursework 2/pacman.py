@@ -361,6 +361,9 @@ class Ghosts_group():
                 ghost.died = False
                 ghost.new_spawned = False
 
+            if ghost.position == (13, 12) or ghost.position == (13, 15):
+                ghost.direction = 1
+
     def chase(
             self,
             ghosts,

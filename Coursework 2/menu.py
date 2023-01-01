@@ -504,17 +504,17 @@ class Menu():
     def set_key(self, event, key):
         '''Sets the new controls of pacman'''
         if key == "Up":                                 # Sets the text of the label to the name of the key which is pressed, to let players know the key
-            self.up_val["text"] = event.keysym
+            self.up_val["text"] = event.keysym.lower()
         elif key == "Left":
-            self.left_val["text"] = event.keysym
+            self.left_val["text"] = event.keysym.lower()
         elif key == "Down":
-            self.down_val["text"] = event.keysym
+            self.down_val["text"] = event.keysym.lower()
         elif key == "Right":
-            self.right_val["text"] = event.keysym
+            self.right_val["text"] = event.keysym.lower()
         elif key == "Pause":
-            self.pause_val["text"] = event.keysym
+            self.pause_val["text"] = event.keysym.lower()
         elif key == "Boss_key":
-            self.boss_key_val["text"] = event.keysym
+            self.boss_key_val["text"] = event.keysym.lower()
 
     def save_settings(self):
         '''Saves the new controls into a settings file'''
