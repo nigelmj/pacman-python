@@ -1,7 +1,7 @@
-Nigel
-Up
-Left
-Down
-Right
+abc
+w
+a
+s
+d
 space
-Escape
+escape

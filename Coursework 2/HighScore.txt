@@ -1,5 +1,5 @@
-Nigel: 6570
-LOL: 4160
-Nigel: 3820
-Nigel: 3620
-LOL: 3290
+abc: 6570
+xyz: 4160
+pqr: 3820
+def: 3640
+mno: 3620
