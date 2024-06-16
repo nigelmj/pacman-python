@@ -1,0 +1,7 @@
+# Bytecode Files
+**/__pycache__
+
+# Game Files
+gameFiles/high_scores.txt
+gameFiles/save_data.txt
+gameFiles/settings.txt
