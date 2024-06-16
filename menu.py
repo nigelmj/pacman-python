@@ -552,9 +552,21 @@ class Menu():
 
     def load_settings(self):
         '''Loads the current controls of pacman'''
-        with open("gameFiles/settings.txt") as f:
-            # loading the current settings and returning them
-            data = f.read().split("\n")
+        try:
+            with open("gameFiles/settings.txt") as f:
+                # Loading the current settings and returning them
+                data = f.read().split("\n")
 
-            return data[0].strip(), data[1].strip(), data[2].strip(
-            ), data[3].strip(), data[4].strip(), data[5].strip(), data[6].strip()
+                # Ensure data has at least 7 lines, otherwise raise an IndexError
+                if len(data) != 7:
+                    raise IndexError("Settings file does not contain enough lines")
+
+                return data[0].strip(), data[1].strip(), data[2].strip(), \
+                       data[3].strip(), data[4].strip(), data[5].strip(), data[6].strip()
+
+        except FileNotFoundError:
+            # Handle the case where the file doesn't exist
+            return "Player", "w", "a", "s", "d", "space", "escape"
+        except IndexError:
+            # Handle the case where the file exists but doesn't have enough lines
+            return "Player", "w", "a", "s", "d", "space", "escape"
