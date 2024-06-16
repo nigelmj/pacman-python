@@ -47,7 +47,7 @@ class Display():
         self.pellets_canvas = {}
 
         # create image for the background
-        image = PIL.Image.open("Images/Map.jpg")
+        image = PIL.Image.open("images/map.jpg")
         self.bg = image.resize((448, 496))
         self.bg = ImageTk.PhotoImage(self.bg)
 
@@ -55,7 +55,7 @@ class Display():
         self.canvas_bg.place(x=-1, y=-1)
         self.canvas_bg.create_image(0, 0, image=self.bg, anchor="nw")
 
-        image = image = PIL.Image.open("Images/Boss_key.jpeg")
+        image = image = PIL.Image.open("images/boss_key.jpeg")
         self.boss_key_pic = image.resize((450, 576))
         self.boss_key_pic = ImageTk.PhotoImage(self.boss_key_pic)
 
@@ -231,27 +231,27 @@ class Display():
 
             row, col = ghost.position
 
-            image = PIL.Image.open(f"Images/Up/Up_{ghost.name}.png")
+            image = PIL.Image.open(f"images/up/{ghost.name}.png")
             ghost.up = image.resize((16, 16))
             ghost.up = ImageTk.PhotoImage(ghost.up)
             ghost.pictures[-1] = ghost.up
 
-            image = PIL.Image.open(f"Images/Left/Left_{ghost.name}.png")
+            image = PIL.Image.open(f"images/left/{ghost.name}.png")
             ghost.left = image.resize((16, 16))
             ghost.left = ImageTk.PhotoImage(ghost.left)
             ghost.pictures[-2] = ghost.left
 
-            image = PIL.Image.open(f"Images/Down/Down_{ghost.name}.png")
+            image = PIL.Image.open(f"images/down/{ghost.name}.png")
             ghost.down = image.resize((16, 16))
             ghost.down = ImageTk.PhotoImage(ghost.down)
             ghost.pictures[1] = ghost.down
 
-            image = PIL.Image.open(f"Images/Right/Right_{ghost.name}.png")
+            image = PIL.Image.open(f"images/right/{ghost.name}.png")
             ghost.right = image.resize((16, 16))
             ghost.right = ImageTk.PhotoImage(ghost.right)
             ghost.pictures[2] = ghost.right
 
-            image = PIL.Image.open("Images/Ghost_frightblue.png")
+            image = PIL.Image.open("images/frightened_ghost_1.png")
             ghost.fright_picture = image.resize((16, 16))
             ghost.fright_picture = ImageTk.PhotoImage(ghost.fright_picture)
 
@@ -560,7 +560,7 @@ class Display():
                         self.game_over_label.place(
                             x=11 * 16 - 10, y=17 * 16 - 5)
                         # open the save file and empty it
-                        f = open("GameSave.txt", "w")
+                        f = open("gameFiles/save_data.txt", "w")
                         f.close()
 
                     return
@@ -604,7 +604,7 @@ class Display():
                                 "Menlo", 16, "bold"), fg="lightblue", bg="black")
                         self.game_over_label.place(
                             x=11 * 16 - 8, y=17 * 16 - 5)
-                        f = open("GameSave.txt", "w")
+                        f = open("gameFiles/save_data.txt", "w")
                         f.close()
 
                     return
@@ -624,7 +624,7 @@ class Display():
             self.win_label.place(x=12 * 16 - 8, y=17 * 16 - 5)
             self.you_won()              # YAYYYYY YOU WONNNNN!!!
             self.menu.save_high_score()     # save the high score
-            f = open("GameSave.txt", "w")
+            f = open("gameFiles/save_data.txt", "w")
             f.close()
 
     def timeout(self):

@@ -88,7 +88,7 @@ class Menu():
 
     def save_high_score(self):
         '''Saves a new high score after the end of a game'''
-        with open("HighScore.txt") as f:
+        with open("gameFiles/high_scores.txt") as f:
             # reads from high score text file, splits the paragraph by newline
             high_score_list = f.read().split("\n")
             for high_score in high_score_list:
@@ -110,7 +110,7 @@ class Menu():
                         # storing only top 5 high scores
                         high_score_list = high_score_list[:5]
 
-                    with open("HighScore.txt", "w") as f:
+                    with open("gameFiles/high_scores.txt", "w") as f:
                         # write the new highscore list (after turning it to a
                         # string) into the file
                         high_score_list = "\n".join(high_score_list)
@@ -124,7 +124,7 @@ class Menu():
             self.root, bd=0)         # create the frame
         self.high_score_frame.place(x=100, y=100, width=250, height=300)
 
-        with open("HighScore.txt") as f:        # open the high score file in read mode
+        with open("gameFiles/high_scores.txt") as f:        # open the high score file in read mode
             high_score_list = f.read().split("\n")
             # for each high score, add the position number before the name and
             # score
@@ -169,12 +169,12 @@ class Menu():
         # join the list to string using newline char
         game_details = "\n".join(game_details)
 
-        with open("GameSave.txt", "w") as f:        # write to file
+        with open("gameFiles/save_data.txt", "w") as f:        # write to file
             f.write(game_details)
 
     def check_game_save(self):
         '''Checks if there is an existing save file for the game'''
-        with open("GameSave.txt") as f:
+        with open("gameFiles/save_data.txt") as f:
             data = f.read()         # checking if there is a game that was saved earlier
             if data == "":
                 return False
@@ -182,7 +182,7 @@ class Menu():
 
     def load_game(self):
         '''Loads the game contents from the save file'''
-        with open("GameSave.txt") as f:         # reads from the save file
+        with open("gameFiles/save_data.txt") as f:         # reads from the save file
             data = f.read().split("\n")
 
             # convert the strings into required integer forms
@@ -520,7 +520,7 @@ class Menu():
         '''Saves the new controls into a settings file'''
         if self.game.player != self.name_entry.get().strip(
         ):           # deletes the save file info if the player has changed their name (different player, so new game)
-            f = open("GameSave.txt", "w")
+            f = open("gameFiles/save_data.txt", "w")
             f.close()
 
         # saves the current settings to a file and also changes it in the game
@@ -536,7 +536,7 @@ class Menu():
         self.menu_frame.destroy()
         self.show_menu()
 
-        with open("Settings.txt", "w") as f:        # writing the new settings into the file
+        with open("gameFiles/settings.txt", "w") as f:        # writing the new settings into the file
             text = [
                 self.game.player,
                 self.pacman.key_up,
@@ -552,7 +552,7 @@ class Menu():
 
     def load_settings(self):
         '''Loads the current controls of pacman'''
-        with open("Settings.txt") as f:
+        with open("gameFiles/settings.txt") as f:
             # loading the current settings and returning them
             data = f.read().split("\n")
 
