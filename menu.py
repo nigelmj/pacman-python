@@ -174,11 +174,16 @@ class Menu():
 
     def check_game_save(self):
         '''Checks if there is an existing save file for the game'''
-        with open("gameFiles/save_data.txt") as f:
-            data = f.read()         # checking if there is a game that was saved earlier
-            if data == "":
+        try:
+            with open("gameFiles/save_data.txt") as f:
+                data = f.read()         # checking if there is a game that was saved earlier
+                if data == "":
+                    return False
+                return True
+
+        except FileNotFoundError:
+                # Handle the case where the file doesn't exist
                 return False
-            return True
 
     def load_game(self):
         '''Loads the game contents from the save file'''
@@ -566,6 +571,9 @@ class Menu():
 
         except FileNotFoundError:
             # Handle the case where the file doesn't exist
+            with open("gameFiles/settings.txt", "w") as f:
+                f.write("Player\nw\na\ns\nd\nspace\nescape")
+
             return "Player", "w", "a", "s", "d", "space", "escape"
         except IndexError:
             # Handle the case where the file exists but doesn't have enough lines
