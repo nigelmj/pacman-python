@@ -88,54 +88,65 @@ class Menu():
 
     def save_high_score(self):
         '''Saves a new high score after the end of a game'''
-        with open("gameFiles/high_scores.txt") as f:
-            # reads from high score text file, splits the paragraph by newline
-            high_score_list = f.read().split("\n")
-            for high_score in high_score_list:
+        try:
+            with open("gameFiles/high_scores.txt") as f:
+                # reads from high score text file, splits the paragraph by newline
+                high_score_list = f.read().split("\n")
+                for high_score in high_score_list:
 
-                # splits each line into name and highscore
-                index = high_score_list.index(high_score)
-                high_score = high_score.split()
-                high_score_val = int(high_score[1])
+                    # splits each line into name and highscore
+                    index = high_score_list.index(high_score)
+                    high_score = high_score.split()
+                    high_score_val = int(high_score[1])
 
-                if self.game.score > high_score_val:        # checking if current score is greater
+                    if self.game.score > high_score_val:        # checking if current score is greater
 
-                    self.game.player = self.game.player.strip()
+                        self.game.player = self.game.player.strip()
 
-                    # insert the current score inbetween the other scores
-                    high_score_list = high_score_list[0:index] + [
-                        self.game.player + ": " + str(self.game.score)] + high_score_list[index:]
+                        # insert the current score inbetween the other scores
+                        high_score_list = high_score_list[0:index] + [
+                            self.game.player + ": " + str(self.game.score)] + high_score_list[index:]
 
-                    if len(high_score_list) > 5:
-                        # storing only top 5 high scores
-                        high_score_list = high_score_list[:5]
+                        if len(high_score_list) > 5:
+                            # storing only top 5 high scores
+                            high_score_list = high_score_list[:5]
 
-                    with open("gameFiles/high_scores.txt", "w") as f:
-                        # write the new highscore list (after turning it to a
-                        # string) into the file
-                        high_score_list = "\n".join(high_score_list)
-                        f.write(high_score_list)
+                        with open("gameFiles/high_scores.txt", "w") as f:
+                            # write the new highscore list (after turning it to a
+                            # string) into the file
+                            high_score_list = "\n".join(high_score_list)
+                            f.write(high_score_list)
 
-                    break
+                        break
+        except FileNotFoundError:        # if the file is not found, create a new file
+            with open("gameFiles/high_scores.txt", "w") as f:
+                high_score = self.game.player + ": " + str(self.game.score) + "\n"
+                f.write(high_score)
 
     def show_high_score(self):
         '''Creates a frame showing the top 5 scores'''
         self.high_score_frame = LabelFrame(
             self.root, bd=0)         # create the frame
         self.high_score_frame.place(x=100, y=100, width=250, height=300)
+        try:
+            with open("gameFiles/high_scores.txt") as f:        # open the high score file in read mode
+                high_score_list = f.read().split("\n")
+                # for each high score, add the position number before the name and
+                # score
+                for index in range(len(high_score_list)):
+                    text = str(index + 1) + ". " + high_score_list[index]
+                    row = int(text[0])
 
-        with open("gameFiles/high_scores.txt") as f:        # open the high score file in read mode
-            high_score_list = f.read().split("\n")
-            # for each high score, add the position number before the name and
-            # score
-            for index in range(len(high_score_list)):
-                text = str(index + 1) + ". " + high_score_list[index]
-                row = int(text[0])
-
-                score_info = Label(self.high_score_frame, text=text, font=(
-                    "Menlo", 15))        # paste the text onto a score lablel
-                score_info.place(x=50, y=20 + (40 * (row - 1)),
-                                 height=40, width=150)
+                    score_info = Label(self.high_score_frame, text=text, font=(
+                        "Menlo", 15))        # paste the text onto a score lablel
+                    score_info.place(x=50, y=20 + (40 * (row - 1)),
+                                    height=40, width=150)
+        except FileNotFoundError:        # if the file is not found, create a new file
+            with open("gameFiles/high_scores.txt", "w") as f:
+                pass
+            info = Label(self.high_score_frame, text="No high scores yet!", font=(
+                "Menlo", 15))        # display a message if there are no high scores
+            info.place(x=40, y=20, height=40, width=170)
 
         back_button = Button(
             self.high_score_frame,
@@ -577,4 +588,7 @@ class Menu():
             return "Player", "w", "a", "s", "d", "space", "escape"
         except IndexError:
             # Handle the case where the file exists but doesn't have enough lines
+            with open("gameFiles/settings.txt", "w") as f:
+                f.write("Player\nw\na\ns\nd\nspace\nescape")
+
             return "Player", "w", "a", "s", "d", "space", "escape"
