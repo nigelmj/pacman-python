@@ -5,3 +5,6 @@
 gameFiles/high_scores.txt
 gameFiles/save_data.txt
 gameFiles/settings.txt
+
+# .DS_Store Files
+**/.DS_Store
